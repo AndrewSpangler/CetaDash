@@ -3,8 +3,10 @@
 # Standard order (omit as needed)
 # (content/field, placeholder, classes, id)
 def a(content="", url=""): pass
-def br(): pass
+def bicon(icon=""): pass
 def back_link(content="", url=""): pass
+def badge(content="", state="success", classes=""): pass
+def br(): pass
 def button_submit(content=""): pass
 def center(content=""): pass
 def code_editor(
@@ -74,9 +76,7 @@ def tr( content="", classes="", id=""): pass
 def yaml_editor(content="", id=""): pass
 def yaml_field(field=""): pass
 def yaml_viewer(content="", id="", title=""): pass
-def badge(content="", state="success", classes=""): pass
 
-def bicon(icon=""): pass
 
 def icon_heading(content="", icon=""): pass
 

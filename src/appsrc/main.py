@@ -122,8 +122,15 @@ print(f"Welcome to {app.config['APPLICATION_NAME']}")
 print(f"{app.config['LOADING_SPLASH']}")
 ### Add markdown rendering in templates
 Markdown(app)
+
 ### Add WTF Script to jinja templating
-WTFScript(app)
+WTFScript(app, {
+    "url_for" : url_for,
+    "format_bytes" : format_bytes,
+    "pretty_date": pretty_date,
+    "pretty_from_timestamp": pretty_from_timestamp,
+    "from_rfc_timestamp": from_rfc_timestamp,
+})
 
 ### Load plugins and config
 for k in (
@@ -329,22 +336,6 @@ def provide_selection() -> dict:
         "PERMISSION_ENUM": app.models.core.PERMISSION_ENUM,
         "local_tz": get_tz_from_localization(app.local_tz),
         "make_table_button": make_table_button,
-        "format_bytes":format_bytes,
-        "pretty_date": pretty_date,
-        "pretty_from_timestamp": pretty_from_timestamp,
-        "from_rfc_timestamp": from_rfc_timestamp,
-        "enumerate": enumerate,
-        "isinstance": isinstance,
-        "len": len,
-        "min": min,
-        "max": max,
-        "sum": sum,
-        "int": int,
-        "app": app,
-        "db": db,
-        "str": str,
-        "json": json,
-        "list": list,
         "themes": BOOTSWATCH_THEMES,
         "selected_theme": selected_theme,
         "models": app.models

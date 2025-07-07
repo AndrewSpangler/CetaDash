@@ -2,9 +2,9 @@ import os
 import logging
 import inspect
 import importlib
-from flask import url_for
+from flask import Flask, url_for
 from jinja2 import Environment, BaseLoader
-
+from typing import Callable, Iterable
 
 class TemplateRenderer:
     def __init__(self, template_str: str, env: Environment):
@@ -15,24 +15,95 @@ class TemplateRenderer:
         return self.template.render(**kw)
 
 
+def accumulate(iterable:Iterable, callback:Callable, *args, **kw) -> str:
+    """
+    Applies a callback function to each item in the iterable and returns
+    the results as a list
+    """
+    return [callback(i, *args, **kw) for i in iterable]
+
+
+def collect_attr(itterable:Iterable, attr:str) -> list:
+    """
+    Collets a list of attributes from an itterable and returns the results
+    as a list
+    """
+    return [getattr(i, attr) for i in itterable]
+
+
 class WTFScript:
-    def __init__(self, app):
+    reserved = [
+        "app",
+        "env"
+        "macros",
+        "renderers",
+        "reserved",
+        "signatures",
+    ]
+
+    builtins = {
+        accumulate,
+        all,
+        any,
+        bin,
+        bool,
+        bytearray,
+        bytes,
+        collect_attr,
+        dict,
+        dir,
+        divmod,
+        enumerate,
+        filter,
+        float,
+        getattr,
+        hasattr,
+        hex,
+        int,
+        isinstance,
+        issubclass,
+        len,
+        list, 
+        max,
+        min,
+        next,
+        oct,
+        pow,
+        range,
+        reversed,
+        round,
+        set,
+        slice,
+        sorted,
+        str,
+        sum,        
+        tuple,
+        type,
+        zip
+    }
+
+    def __init__(
+        self,
+        app,
+        binds:dict = {} # Map of names to callables to register
+    ):
+        self.app = app  # Store app for later use
         self.macros = {}
         self.renderers = {}
         self.signatures = {}
 
-        # Create shared Jinja2 environment
+        # create shared Jinja2 environment
         self.env = Environment(loader=BaseLoader())
-        self.env.globals["url_for"] = url_for # for flask rendering
+
+        # Built-in functions
+        for builtin in self.builtins:
+            self._bind(builtin.__name__, builtin)
+
+        for name, callback in binds.items():
+            self._bind(name, callback)
 
         # Load dummy functions from headers.py
         self.dummy_functions = self._load_dummy_functions()
-
-        # Register dummy functions for macro args
-        for name, func in self.dummy_functions.items():
-            filt = self._make_filter(name)
-            self.env.filters[name] = filt
-            self.env.globals[name] = filt
 
         macros_dir = os.path.join(os.path.dirname(__file__), "macros")
         for ent in os.scandir(macros_dir):
@@ -40,19 +111,28 @@ class WTFScript:
                 name = ent.name[:-5]
                 with open(ent.path) as f:
                     template = f.read()
-
                 self.macros[name] = template
-
                 func = self.dummy_functions.get(name)
                 sig = inspect.signature(func) if func else None
-
                 renderer = TemplateRenderer(template, env=self.env)
                 self.renderers[name] = renderer
                 self.signatures[name] = sig
-
                 filt = self._make_filter(name)
-                app.jinja_env.filters[name] = filt
-                app.jinja_env.globals[name] = filt
+                self._bind(name, filt)
+
+    def _bind(self, name: str, callback: Callable) -> None:
+        """
+        Bind callable as filter/global/method
+        """
+        if name.startswith("_"):
+            raise ValueError(f"Cannot bind macro {name} - macros starting with underscores are not allowed")
+        if name in self.reserved:
+            raise ValueError(f"Cannot bind macro {name} - name is reserved.")
+        self.env.filters[name] = callback
+        self.env.globals[name] = callback
+        self.app.jinja_env.filters[name] = callback
+        self.app.jinja_env.globals[name] = callback
+        setattr(self, name, callback)
 
     def _load_dummy_functions(self):
         """Load dummy functions for arg checking."""
