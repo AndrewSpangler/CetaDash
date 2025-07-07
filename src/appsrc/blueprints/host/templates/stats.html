@@ -1,0 +1,29 @@
+{% extends "core.html" %}
+{% set title="Host Stats" %}
+{% block title %}{% endblock %}
+
+{% block content %}
+{% autoescape false %}
+{{ container_start() }}
+{% set value_box = header_value_box({
+  "Hostname" : info.hostname,
+  "Boot Time" : pretty_date(info.boot_time),
+  "Memory": (
+    format_bytes(info.memory.total - info.memory.available)
+    +"/"+format_bytes(info.memory.total)
+  ),
+}) %}
+{{ container_header("Host Stats", value_boxes=[value_box]) }}
+<div class="card-body">
+  {% set sections = {
+  "host" : ("Host", "includes/host_card.html"),
+  "ip": ("IP Addresses", "includes/addresses_table.html"),
+  "disk": ("Disk Partitions", "includes/partitions_table.html"),
+  "processes": ("Processes", "includes/processes_table.html"),
+  "python": ("Python", "includes/python_table.html")
+  } %}
+  {% include "includes/section_accordian.html" %}
+</div>
+{{ container_end() }}
+{% endautoescape %}
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "pages/form_page.html" %}
+
+{% block form_content %}
+{% autoescape false %}
+{{ 
+
+(
+  form.name
+    | string_field("Name Cannot Be Blank")
+    | col
+  ~ form.workflow_id
+    | dropdown_field
+    | col
+) | row("mb-0")
+
+~ (
+  form.endpoint
+    | string_field("Trigger Endpoint (/docker/triggers/{endpoint})")
+    | col("mb-0")
+) | row("mb-0")
+
+~ (
+  form.details 
+    | md_field
+    | col("mb-0")
+  ~ form.description
+    | textarea_field
+    | col("mb-0")
+) | row("mb-0 mt-3")
+
+~ (
+  form.headers
+    | yaml_field
+    | col("mb-0")
+  ~ form.environment
+    | env_field
+    | col("mb-0")
+) | row("mb-0")
+
+}}
+{% endautoescape %}
+{% endblock %}
+

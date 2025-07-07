@@ -1,0 +1,28 @@
+<ul class="nav nav-tabs" id="myTabs">
+  {% for index, (key, tab) in enumerate(tabs.items()) %}
+    {% set classes = "nav-link" %}
+    {% if loop.first %}
+      {% set classes = classes + " active" %}    
+    {% endif %}
+    <a class="{{classes}}" id="tab{{index}}-tab" data-bs-toggle="tab" href="#tab{{index}}" onclick="loadTab('tab{{index}}', '{{url_for(tab)}}')"><b>{{ key }}</b></a>
+  {% endfor %}
+</ul>
+
+<div class="tab-content">
+
+{% for index, (key, tab) in enumerate(tabs.items()) %}
+  {% set classes = "tab-pane fade" %}
+  {% if loop.first %}
+    {% set classes = classes + " show active" %}    
+  {% endif %}
+  <div class="{{classes}}" id="tab{{index}}"></div>
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var firstTabLink = document.getElementById('tab0-tab');
+  if (firstTabLink) {
+    firstTabLink.click();
+  }
+});
+</script>

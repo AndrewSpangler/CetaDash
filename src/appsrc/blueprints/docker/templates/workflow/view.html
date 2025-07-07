@@ -1,0 +1,33 @@
+{% from "macros/docker.html" import
+  workflow_task_table,
+  workflow_log_table,
+  workflow_scheduled_log_table,
+  workflow_edit_log_link
+  with context
+%}
+
+{% set obj = workflow %}
+{% set back_url = "docker.workflows.index" %}
+{% set back_text = "Back to CetaDash Workflows" %}
+{% set page_title = workflow.name %}
+{% set edit_button_text = "Edit Workflow" %}
+{% set edit_button_url = "docker.workflows.edit" %}
+{% set edit_button_args = {"workflow_id":workflow.id} %}
+
+{% set log_url_callback = workflow_edit_log_link %}
+
+{% extends "pages/editable_page.html" %}
+{% block title %}View Workflow{% endblock %}
+
+{% block view_content %}
+{% autoescape false %}
+{{
+workflow_task_table(workflow)
+  | section_card("workflow-tasks", "Workflow Tasks")
+~ workflow_log_table(workflow)
+  | section_card("workflow-log", "Workflow Run Logs")
+~ workflow_scheduled_log_table(workflow)
+  | section_card("workflow-schedule-log", "Scheduled Run Logs")
+}}
+{% endautoescape %}
+{% endblock %}

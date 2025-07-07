@@ -1,0 +1,22 @@
+{% extends "pages/content_page.html" %}
+
+{% block card_content %}
+{% autoescape false %}
+<div class="row justify-content-center">
+  <div class="col">
+    <form id="form" method="post" autocomplete="off">
+      {{ form.hidden_tag() }}
+      {% block form_content %}
+      {% endblock %}
+      {{ form_submit(form.submit) }}
+    </form>
+  </div>
+</div>
+{% endautoescape %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/yaml/yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/properties/properties.min.js"></script>
+{% endblock %}

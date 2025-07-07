@@ -1,0 +1,15 @@
+{% extends 'core.html' %}
+{% set title="Background Tasks" %}
+{% block content %}
+{% autoescape false %}
+{{
+(
+  title
+    | container_header
+  ~ table
+    | div("card-body")
+) | container 
+  | safe
+}}
+{% endautoescape %}
+{% endblock %}

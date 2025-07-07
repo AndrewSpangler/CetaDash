@@ -1,0 +1,30 @@
+{% extends "core.html" %}
+{% if not edit_box is defined %}{% set edit_box=True %}{% endif %}
+{% if not value_boxes is defined %}{% set value_boxes=[] %}{% endif %}
+
+{% from "macros/sections.html" import 
+  edit_logs_card,
+  creator_editor_box,
+  with context
+%}
+
+{% macro edit_log_page_header(edit_log) %}
+{{ container_header(
+  "Log - {edit_log.id}",
+  "",
+  "",
+  "",
+  ""
+) | safe }}
+{% endmacro %}
+
+{% block content %}
+{% autoescape false %}
+{{ container_start() }}
+{{ edit_log_page_header(edit_log) }}
+<div class="card-body">
+{% block page_content %}{% endblock %}
+</div>
+{{ container_end() }}
+{% endautoescape %}
+{% endblock %}

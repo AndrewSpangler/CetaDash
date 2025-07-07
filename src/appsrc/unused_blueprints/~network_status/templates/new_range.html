@@ -1,0 +1,16 @@
+{% set title="New Scanner Range" %}
+{% extends "pages/form_page.html" %}
+
+{% block form_content %}
+{{
+  (
+    form.name
+      | string_field
+      | row
+    ~ form.address
+      | string_field
+      | row
+  ) | col
+    | safe
+}}
+{% endblock %}

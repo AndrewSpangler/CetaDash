@@ -1,0 +1,29 @@
+{% if do_action %}
+<form class="table-button-form" style="float:{{float}};" 
+    method={{method}}
+    action="{{url_for(*url_args, **url_kwargs)}}"
+
+{% if on_submit %}
+    onsubmit="return confirm('{{on_submit | safe}}');"
+{% endif %}
+>
+{% endif %}
+    <button 
+    {% if on_click %}
+        onclick="{{on_click | safe}}"
+    {% else %}
+        type="submit"
+    {% endif %}
+    {% if tooltip %}
+        data-bs-toggle="tooltip"
+        data-bs-placement="top"
+        data-bs-html="true"
+        title="{{tooltip}}"
+    {% endif %}
+    class="btn btn-{{btn_type}} table-button {{' '.join(classes)}}"
+    style="float:{{float}};">
+    {{text}}
+    </button>
+{% if do_action %}
+</form>
+{% endif %}

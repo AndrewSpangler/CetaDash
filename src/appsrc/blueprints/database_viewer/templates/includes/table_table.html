@@ -1,0 +1,22 @@
+<table class="table table-striped" id="databases_table" width="100%">
+  <thead>
+    <tr>
+      {% for col in columns %}
+      <th>{{ col }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      {% for td in row %}
+      {% if not loop.first %}
+      <td>{{td}}</td>
+      {% else %}
+      <td><a href="{{url_for('database_viewer.view', database=database, table=table, uid=td)}}">{{ td }}</a></td>
+      {% endif %}
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

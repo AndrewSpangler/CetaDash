@@ -1,0 +1,34 @@
+{% from "macros/docker.html" import 
+  trigger_log_table,
+  trigger_edit_log_link
+  with context
+%}
+
+{% set obj = trigger %}
+{% set back_url = "docker.triggers.index" %}
+{% set back_text = "Back to Triggers" %}
+{% set page_title = trigger.name %}
+{% set edit_button_text = "Edit Workflow Trigger" %}
+{% set edit_button_url = "docker.triggers.edit" %}
+{% set edit_button_args = {"trigger_id":trigger.id} %}
+
+{% set log_url_callback = trigger_edit_log_link %}
+
+{% extends "pages/editable_page.html" %}
+{% block title %}View Workflow{% endblock %}
+
+{% block view_content %}
+{% autoescape false %}
+{{
+  (
+    (trigger.headers or "")
+      | yaml_viewer("headers", "Proxy Headers Translation")
+    ~ (trigger.environment or "")
+      | env_viewer("environment", "Environment")
+  ) | row
+    | section_card("config", "Configuration")
+  ~ trigger_log_table(trigger)
+    | section_card("logs", "Run Logs")
+}}
+{% endautoescape %}
+{% endblock %}

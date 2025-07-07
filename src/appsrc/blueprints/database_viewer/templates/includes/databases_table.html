@@ -1,0 +1,19 @@
+<table class="table table-striped" id="databases_table" , width="100%">
+  <thead>
+    <tr>
+      <th>DB Bind</th>
+      <th>Engine</th>
+      <th>Table Count</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for db_bind, engine in engines.items() %}
+    {% set tables = databases[db_bind] %}
+    <tr>
+      <td><a href="{{url_for('database_viewer.view', database=db_bind)}}">{{ db_bind }}</a></td>
+      <td>{{ engine.name }} ({{ engine.driver }})</td>
+      <td class="dt-left">{{ len(tables) }} </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

@@ -1,0 +1,32 @@
+{% set obj = document %}
+{% set back_url = "docu.index" %}
+{% set back_text = "Back to Documents" %}
+{% set page_title = "Viewing " + document.title %}
+{% set title = page_title %}
+{% set edit_button_text = "Edit Document" %}
+{% set edit_button_url = "docu.edit" %}
+{% set edit_button_args = {"document_id":document.id} %}
+
+{% extends "pages/editable_page.html" %}
+
+{% macro log_url_callback(log) %}
+<a href="{{url_for('docu.edits', document_id=log.document.id, log_id=log.id )}}" >{{log.id}}</a></td>
+{% endmacro %}
+
+{% macro display_content(document) %}
+{% if document.content %}
+{{ document.content | markdown }}
+{% else %}
+<center><h4 class="mt-4"><i>Document is blank.</i></h4></center>
+{% endif %}
+{% endmacro %}
+
+{% block view_content %}
+{% autoescape false %}
+{{
+display_content(document)
+  | markdown
+  | section_card("content", "Document")
+}}
+{% endautoescape %}
+{% endblock %}

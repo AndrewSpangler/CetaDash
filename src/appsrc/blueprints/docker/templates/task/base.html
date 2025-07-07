@@ -1,0 +1,35 @@
+{% extends "pages/form_page.html" %}
+{% block form_content %}
+{% autoescape false %}
+
+{{
+  (
+    form.name
+      | string_field("Name Cannot Be Blank")
+      | col
+    ~ form.description
+      | string_field("Short description...")
+      | col
+  ) | row("mb-0")
+
+  ~ (
+    form.details
+      | md_field
+      | col("mb-0")
+    ~ form.environment
+      | env_field
+      | col("mb-0")
+  ) | row("mb-0")
+
+  ~ (
+    form.template
+      | yaml_field
+      | col
+    ~ "Header variables defined in triggers may be used as template variables here."
+      | note
+  ) | row("mb-0") 
+}}
+
+{% endautoescape %}
+{% endblock %}
+

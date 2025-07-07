@@ -1,0 +1,353 @@
+
+{% macro scheduler_edit_log_link(log) %}
+{{
+  log.id
+  | a(url_for("docker.scheduler.edits", trigger_id=log.schedule_trigger.id, log_id=log.id))
+  | safe
+}}
+{% endmacro %}
+
+
+{% macro task_edit_log_link(log) %}
+{{
+  log.id
+  | a(url_for("docker.tasks.edits", task_id=log.task.id, log_id=log.id))
+  | safe
+}}
+{% endmacro %}
+
+
+{% macro workflow_edit_log_link(log) %}
+{{
+  log.id
+  | a(url_for("docker.workflows.edits", workflow_id=log.workflow.id, log_id=log.id))
+  | safe
+}}
+{% endmacro %}
+
+
+{% macro trigger_edit_log_link(log) %}
+{{
+  log.id
+  | a(url_for("docker.triggers.edits", trigger_id=log.workflow_trigger.id, log_id=log.id))
+  | safe
+}}
+{% endmacro %}
+
+
+{% macro task_link(task) %}
+{{
+  ("[" ~ task.id ~ "] " ~ task.name)
+  | a(url_for("docker.tasks.view", task_id=task.id))
+  | safe
+}}
+{% endmacro %}
+
+
+{% macro workflow_link(workflow) %}
+{{
+  ("[" ~ workflow.id ~ "] " ~ workflow.name)
+  | a(url_for("docker.workflows.view", workflow_id=workflow.id))
+  | safe
+}}
+{% endmacro %}
+
+
+{% macro trigger_link(trigger) %}
+{{
+  ("[" ~ trigger.id ~ "] " ~ trigger.name)
+  | a(url_for("docker.triggers.view", trigger_id=trigger.id))
+  | safe
+}}
+{% endmacro %}
+
+
+{% macro schedule_trigger_link(trigger) %}
+{{
+  ("[" ~ trigger.id ~ "] " ~ trigger.name)
+  | a(url_for("docker.scheduler.view", trigger_id=trigger.id))
+  | safe
+}}
+{% endmacro %}
+
+
+{% macro task_log_table(task) %}
+{# list of run logs on task page #}
+  {% macro task_log_rows(logs) %}
+    {% macro task_log_row(l) %}
+      {{
+        (
+          l.timestamp_pretty
+            | td
+          ~ app.models.docker.STATUS_ENUM._NAMES[l.status]
+            | td
+          ~ l.user.name
+            | td
+          ~ workflow_link(l.workflow_log.workflow)
+            | td
+          ~ l.workflow_log.id
+            | td
+          ~ trigger_link(l.workflow_log.trigger_log.workflow_trigger)
+            | td
+          ~ l.workflow_log.trigger_log.id
+            | td
+        ) | tr
+          | safe
+      }}
+    {% endmacro %}
+    {% for l in logs %}
+      {{ task_log_row(l)|safe }}
+    {% endfor %}
+  {% endmacro %}
+  {{
+    (
+      (
+        "Run Timestamp"         | th
+        ~ "Run Status"          | th
+        ~ "Runner"              | th
+        ~ "Workflow [ID] Name"  | th
+        ~ "Workflow Log"        | th
+        ~ "Trigger [ID]"        | th
+        ~ "Trigger Log"         | th
+      ) | tr 
+        | thead
+      ~ task_log_rows(task.run_logs)
+        | tbody
+    ) | table(id="task_run_log_"~task.id)
+      | safe
+  }}
+{% endmacro %}
+
+
+{% macro task_scheduled_log_table(task) %}
+{# list of scheduled run logs on task page #}
+  {% macro scheduled_task_log_rows(logs) %}
+    {% macro scheduled_task_log_row(l) %}
+      {{
+        (
+          l.timestamp_pretty
+            | td
+          ~ app.models.docker.STATUS_ENUM._NAMES[l.status]
+            | td
+          ~ (l.user.name if l.user else "System")
+            | td
+          ~ workflow_link(l.workflow_log.workflow)
+            | td
+          ~ l.workflow_log.id
+            | td
+          ~ schedule_trigger_link(l.workflow_log.schedule_trigger_log.schedule_trigger) 
+            | td
+          ~ l.workflow_log.schedule_trigger_log.id
+            | td
+        ) | tr
+          | safe
+      }}
+    {% endmacro %}
+    {% for l in logs %}
+      {{ scheduled_task_log_row(l)|safe }}
+    {% endfor %}
+  {% endmacro %}
+  {{
+    (
+      (
+        "Run Timestamp"         | th
+        ~ "Run Status"          | th
+        ~ "Runner"              | th
+        ~ "Workflow [ID] Name"  | th
+        ~ "Workflow Log"        | th
+        ~ "Trigger [ID] Name"   | th
+        ~ "Trigger Log"         | th
+      ) | tr 
+        | thead
+      ~ scheduled_task_log_rows(task.scheduled_run_logs)
+        | tbody
+    ) | table(id="scheduled_task_run_log_"~task.id)
+      | safe
+  }}
+{% endmacro %}
+
+
+{% macro workflow_task_table(workflow) %}
+{# prioritized list of tasks associated with workflow #}
+  {% macro workflow_task_rows(task_associations) %}
+    {% macro workflow_task_row(assoc) %}
+      {{
+        (
+          (assoc.priority + 1)
+            | td
+          ~ task_link(assoc.task)
+            | td
+          ~ assoc.task.created_at_pretty
+            | td
+          ~ assoc.task.creator.name
+            | td
+          ~ assoc.task.edited_at_pretty
+            | td
+          ~ assoc.task.last_editor.name
+            | td
+        ) | tr
+          | safe
+      }}
+    {% endmacro %}
+    {% for assoc in task_associations %}
+      {{ workflow_task_row(assoc)|safe }}
+    {% endfor %}
+  {% endmacro %}
+  {{
+    (
+      (
+        "Step"              | th
+        ~ "Task [ID] Name"  | th
+        ~ "Created"         | th
+        ~ "Creator"         | th
+        ~ "Edited"          | th
+        ~ "Editor"          | th
+      ) | tr 
+        | thead
+      ~ workflow_task_rows(workflow.task_associations.order_by(app.models.docker.WorkflowTaskAssociation.priority.asc()))
+        | tbody
+    ) | table(id="workflow_tasks_"~workflow.id)
+      | safe
+  }}
+{% endmacro %}
+
+
+{% macro workflow_log_table(workflow) %}
+{# docker workflow logs #}
+  {% macro workflow_log_rows(logs) %}
+    {% macro workflow_log_row(l) %}
+      {% macro task_log_ids(task_logs) %}
+        {% for tl in task_logs %}{{tl.id}}{% if not loop.last %} {% endif %}{% endfor %}
+      {% endmacro %}
+      {{
+        (
+          l.timestamp_pretty
+            | td
+          ~ app.models.docker.STATUS_ENUM._NAMES[l.status]
+            | td
+          ~ l.user.name
+            | td
+          ~ trigger_link(l.trigger_log.workflow_trigger)
+            | td
+          ~ l.trigger_log.id
+            | td
+          ~ task_log_ids(l.task_logs)
+            | td
+        ) | tr
+          | safe
+      }}
+    {% endmacro %}
+    {% for l in logs %}
+      {{ workflow_log_row(l)|safe }}
+    {% endfor %}
+  {% endmacro %}
+  {{
+    (
+      (
+        "Run Timestamp"       | th
+        ~ "Run Status"        | th
+        ~ "Runner"            | th
+        ~ "Trigger [ID] Name" | th
+        ~ "Trigger Log"       | th
+        ~ "Task Logs"         | th
+      ) | tr 
+        | thead
+      ~ workflow_log_rows(workflow.run_logs)
+        | tbody
+    ) | table(id="workflow_run_log_"~workflow.id)
+      | safe
+  }}
+{% endmacro %}
+
+
+{% macro workflow_scheduled_log_table(workflow) %}
+{# docker workflow logs #}
+  {% macro workflow_scheduled_log_rows(logs) %}
+    {% macro workflow_scheduled_log_row(l) %}
+      {% macro scheduled_task_log_ids(task_logs) %}
+        {% for tl in task_logs %}{{tl.id}}{% if not loop.last %} {% endif %}{% endfor %}
+      {% endmacro %}
+      {{
+        (
+          l.timestamp_pretty
+            | td
+          ~ app.models.docker.STATUS_ENUM._NAMES[l.status]
+            | td
+          ~ l.user.name
+            | td
+          ~ schedule_trigger_link(l.schedule_trigger_log.schedule_trigger)
+            | td
+          ~ l.schedule_trigger_log.id
+            | td
+          ~ scheduled_task_log_ids(l.scheduled_task_logs)
+            | td
+        ) | tr
+          | safe
+      }}
+    {% endmacro %}
+    {% for l in logs %}
+      {{ workflow_scheduled_log_row(l)|safe }}
+    {% endfor %}
+  {% endmacro %}
+  {{
+    (
+      (
+        "Run Timestamp"       | th
+        ~ "Run Status"        | th
+        ~ "Runner"            | th
+        ~ "Trigger [ID] Name" | th
+        ~ "Trigger Log"       | th
+        ~ "Task Logs"         | th
+      ) | tr 
+        | thead
+      ~ workflow_scheduled_log_rows(workflow.schedule_run_logs)
+        | tbody
+    ) | table(id="workflow_scheduled_log_"~workflow.id)
+      | safe
+  }}
+{% endmacro %}
+
+
+{% macro trigger_log_table(trigger) %}
+{# List of run logs on trigger / scheduled trigger page #}
+  
+  {% macro trigger_log_rows(logs) %}
+    {% macro trigger_log_row(l) %}
+      {{
+        (
+          l.timestamp_pretty
+            | td
+          ~ models.docker.STATUS_ENUM._NAMES[l.status]
+            | td
+          ~ l.user.name
+            | td
+          ~ workflow_link(l.workflow_log.workflow)
+            | td
+          ~ l.workflow_log.id
+            | td
+        ) | tr
+          | safe
+      }}
+    {% endmacro %}
+    {% for l in logs %}
+      {{ trigger_log_row(l)|safe }}
+    {% endfor %}
+  {% endmacro %}
+
+  {{
+    (
+      (
+        "Run Timestamp"  | th
+        ~ "Run Status"   | th
+        ~ "Runner"       | th
+        ~ "Workflow"     | th
+        ~ "Workflow Log" | th
+      ) | tr 
+        | thead
+      ~ trigger_log_rows(trigger.run_logs)
+        | tbody
+    ) | table(id="trigger_log_"~trigger.id)
+      | safe
+  }}
+
+{% endmacro %}

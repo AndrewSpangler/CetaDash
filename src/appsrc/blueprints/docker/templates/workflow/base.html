@@ -1,0 +1,27 @@
+{% extends "pages/form_page.html" %}
+
+{% block form_content %}
+{% autoescape false %}
+
+{{
+(
+  form.name
+    | string_field("Enter workflow name")
+    | col("mb-0")
+  ~ form.description
+    | textarea_field
+    | col("mb-0")
+) | row("mb-0")
+
+~ (
+  form.details
+    | md_field
+    | col
+  ~ form.tasks
+    | sortable_field(task_name_map, available_tasks, label="Task Order")
+    | col
+) | row("mb-0")
+}}
+
+{% endautoescape %}
+{% endblock %}

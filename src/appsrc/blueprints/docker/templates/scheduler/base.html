@@ -1,0 +1,115 @@
+{% extends "pages/form_page.html" %}
+
+{% block form_content %}
+{% autoescape false %}
+{{ 
+(  
+  form.name
+    | string_field("Hourly sync, etc")
+    | col
+  ~ form.workflow
+    | dropdown_field
+    | col
+) | row
+
+~ (
+  form.details
+    | md_field
+    | col("mb-1")
+  ~ form.description
+    | textarea_field
+    | col("mb-1")
+) | row
+
+~ hr()
+
+~ ( 
+  form.job_type
+    | dropdown_field
+    | col
+  ~ form.enabled
+    | toggle_field
+    | col
+) | row 
+
+~ ( 
+  form.day_of_week
+    | string_field("mon,wed,fri")
+    | col
+  ~ form.hour
+    | integer_field("0-23")
+    | col
+  ~ form.minute
+    | integer_field("0-59")
+    | col
+) | row(id="cron-fields")
+
+~ ( 
+  form.hours
+    | integer_field
+    | col
+  ~ form.minutes
+    | integer_field
+    | col
+  ~ form.seconds
+    | integer_field
+    | col
+) | row(id="interval-fields") 
+
+~ hr()
+
+~ ( 
+  form.headers
+    | yaml_field
+    | col
+  ~ form.environment
+    | env_field
+    | col 
+) | row
+}} 
+{% endautoescape %}
+{% endblock %}
+
+
+{% block scripts %}
+{{ super() }}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+
+    const jobTypeSelect = document.querySelector('[name="job_type"]');
+    const cronFields = document.getElementById("cron-fields");
+    const intervalFields = document.getElementById("interval-fields");
+
+    function toggleFields() {
+      const type = jobTypeSelect.value;
+      if (type === "cron") {
+        cronFields.style.display = "flex";
+        intervalFields.style.display = "none";
+        enableInputs(cronFields);
+        disableInputs(intervalFields);
+      } else if (type === "interval") {
+        cronFields.style.display = "none";
+        intervalFields.style.display = "flex";
+        enableInputs(intervalFields);
+        disableInputs(cronFields);
+      } else {
+        cronFields.style.display = "none";
+        intervalFields.style.display = "none";
+        disableInputs(cronFields);
+        disableInputs(intervalFields);
+      }
+    }
+
+    function enableInputs(container) {
+      container.querySelectorAll("input").forEach(el => el.disabled = false);
+    }
+
+    function disableInputs(container) {
+      container.querySelectorAll("input").forEach(el => el.disabled = true);
+    }
+
+    jobTypeSelect.addEventListener("change", toggleFields);
+    toggleFields();
+  });
+</script>
+{% endblock %}

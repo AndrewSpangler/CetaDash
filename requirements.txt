@@ -1,0 +1,16 @@
+flask==2.3.1
+flask_markdown
+flask_admin
+flask_sqlalchemy
+flask.ext
+flask_security
+flask_wtf
+wtforms_sqlalchemy
+pytz
+flask_apscheduler
+packaging
+requests
+sqlalchemy==1.4.45
+psutil
+pyyaml
+pymysql

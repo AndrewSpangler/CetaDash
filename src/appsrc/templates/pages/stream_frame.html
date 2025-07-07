@@ -1,0 +1,324 @@
+{% set nav_enabled = False %}
+{% extends "core.html" %}
+{% block content %}
+<div class="terminal_div d-flex flex-column" style="height: 100vh;" id="terminalContainer">
+    <div class="terminal-header" style="background: #000; color: #fff; width: 100%; border-bottom: 1px solid #333;">
+        <div class="d-flex align-items-center justify-content-between px-3 py-2">
+            <div class="d-flex align-items-center gap-3">
+                <label class="form-check form-switch text-white d-flex align-items-center gap-2 mb-0">
+                    <input class="form-check-input" type="checkbox" id="autoscrollToggle" checked>
+                    <span class="user-select-none">Auto-Scroll</span>
+                </label>
+                
+                <label class="form-check form-switch text-white d-flex align-items-center gap-2 mb-0">
+                    <input class="form-check-input" type="checkbox" id="wrapLinesToggle">
+                    <span class="user-select-none">Wrap Lines</span>
+                </label>
+            </div>
+            
+            <div class="d-flex align-items-center gap-2">
+                <button id="copyButton" class="btn btn-sm btn-outline-info px-3" title="Copy all text">
+                    Copy
+                </button>
+                <button id="pauseButton" class="btn btn-sm btn-outline-warning px-3" title="Pause/Resume stream">
+                    Pause
+                </button>
+                <button id="fullscreenToggle" class="btn btn-sm btn-outline-primary px-3" title="Toggle fullscreen">
+                    <span class="fullscreen-text">Fullscreen</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <pre id="log" 
+         class="flex-grow-1 m-0 p-3" 
+         style="background: #000; color: #fff; overflow-y: auto; overflow-x: auto; width: 100%; box-sizing: border-box; white-space: pre; font-family: 'Consolas', 'Monaco', 'Lucida Console', monospace; font-size: 14px; line-height: 1.4;"
+         tabindex="0"
+         role="log"
+         aria-live="polite"
+         aria-label="Terminal output"></pre>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="copyToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-body bg-primary text-white">
+            Content copied to clipboard!
+        </div>
+    </div>
+    <div id="pauseToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-body bg-primary text-white">
+            <span id="pauseToastText">Stream paused</span>
+        </div>
+    </div>
+    <div id="autoscrollToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-body bg-primary text-white">
+            <span id="autoscrollToastText">Auto-scroll enabled</span>
+        </div>
+    </div>
+    <div id="wrapToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-body bg-primary text-white">
+            <span id="wrapToastText">Line wrapping disabled</span>
+        </div>
+    </div>
+    <div id="fullscreenToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-body bg-primary text-white">
+            <span id="fullscreenToastText">Fullscreen enabled</span>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/ansi_up@5.1.0/ansi_up.min.js"></script>
+<script>
+    class TerminalInterface {
+        constructor() {
+            this.log = document.getElementById('log');
+            this.ansi_up = new AnsiUp();
+            this.es = null;
+            this.autoscroll = true;
+            this.wrapLines = false;
+            this.isPaused = false;
+            this.messageBuffer = [];
+            
+            this.initializeEventSource();
+            this.setupEventListeners();
+            this.setupKeyboardShortcuts();
+        }
+
+        initializeEventSource() {
+            this.es = new EventSource('{{stream_url}}');
+            
+            this.es.onmessage = (e) => {
+                if (this.isPaused) {
+                    this.messageBuffer.push(e.data);
+                    return;
+                }
+                this.appendMessage(e.data);
+            };
+            
+            this.es.onerror = (err) => {
+                console.error("EventSource closed:", err);
+                this.appendMessage(`\x1b[32mConnection closed\x1b[0m`); 
+                this.es.close();
+            };
+        }
+
+        appendMessage(data) {
+            const html = this.ansi_up.ansi_to_html(data);
+            const messageElement = document.createElement('div');
+            messageElement.innerHTML = html;
+            this.log.appendChild(messageElement);
+            
+            if (this.autoscroll) {
+                this.scrollToBottom();
+            }
+        }
+
+        scrollToBottom() {
+            this.log.scrollTop = this.log.scrollHeight;
+        }
+
+        setupEventListeners() {
+            // Auto-scroll toggle
+            const autoscrollToggle = document.getElementById('autoscrollToggle');
+            autoscrollToggle.addEventListener('change', () => {
+                this.autoscroll = autoscrollToggle.checked;
+                if (this.autoscroll) {
+                    this.scrollToBottom();
+                }
+                
+                // Toast notification
+                document.getElementById('autoscrollToastText').textContent = 
+                    this.autoscroll ? 'Auto-scroll enabled' : 'Auto-scroll disabled';
+                this.showToast('autoscrollToast');
+            });
+
+            // Line wrapping toggle
+            const wrapLinesToggle = document.getElementById('wrapLinesToggle');
+            wrapLinesToggle.addEventListener('change', () => {
+                this.wrapLines = wrapLinesToggle.checked;
+                this.updateLineWrapping();
+                
+                // Toast notification
+                document.getElementById('wrapToastText').textContent = 
+                    this.wrapLines ? 'Line wrapping enabled' : 'Line wrapping disabled';
+                this.showToast('wrapToast');
+            });
+
+            // Copy button
+            document.getElementById('copyButton').addEventListener('click', () => {
+                this.copyToClipboard();
+            });
+
+            // Pause/Resume button
+            const pauseButton = document.getElementById('pauseButton');
+            pauseButton.addEventListener('click', () => {
+                this.togglePause();
+            });
+
+            // Fullscreen toggle
+            const fsButton = document.getElementById('fullscreenToggle');
+            const terminalContainer = document.getElementById('terminalContainer');
+
+            fsButton.addEventListener('click', () => {
+                this.toggleFullscreen(terminalContainer);
+            });
+
+            // Update fullscreen button text on fullscreen change
+            document.addEventListener('fullscreenchange', () => {
+                this.updateFullscreenButton();
+            });
+
+            // Auto-scroll detection (disable when user scrolls up)
+            this.log.addEventListener('scroll', () => {
+                const isAtBottom = this.log.scrollTop + this.log.clientHeight >= this.log.scrollHeight - 5;
+                if (!isAtBottom && this.autoscroll) {
+                    this.autoscroll = false;
+                    autoscrollToggle.checked = false;
+                }
+            });
+        }
+
+        setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Ctrl+C or Cmd+C - Copy
+                if ((e.ctrlKey || e.metaKey) && e.key === 'c' && !window.getSelection().toString()) {
+                    e.preventDefault();
+                    this.copyToClipboard();
+                }
+                
+                // F11 - Fullscreen
+                if (e.key === 'F11') {
+                    e.preventDefault();
+                    this.toggleFullscreen(document.getElementById('terminalContainer'));
+                }
+                
+                // Space - Pause/Resume (when terminal is focused)
+                if (e.key === ' ' && e.target === this.log) {
+                    e.preventDefault();
+                    this.togglePause();
+                }
+            });
+        }
+
+        updateLineWrapping() {
+            if (this.wrapLines) {
+                this.log.style.whiteSpace = 'pre-wrap';
+                this.log.style.overflowX = 'hidden';
+            } else {
+                this.log.style.whiteSpace = 'pre';
+                this.log.style.overflowX = 'auto';
+            }
+        }
+
+        async copyToClipboard() {
+            try {
+                const text = this.log.textContent || this.log.innerText;
+                await navigator.clipboard.writeText(text);
+                this.showToast('copyToast');
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                // Fallback for older browsers
+                this.fallbackCopyTextToClipboard(this.log.textContent || this.log.innerText);
+            }
+        }
+
+        fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            textArea.style.top = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                this.showToast('copyToast');
+            } catch (err) {
+                console.error('Failed to copy', err);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+
+        togglePause() {
+            this.isPaused = !this.isPaused;
+            const pauseButton = document.getElementById('pauseButton');
+            
+            if (this.isPaused) {
+                pauseButton.textContent = 'Resume';
+                pauseButton.classList.remove('btn-outline-warning');
+                pauseButton.classList.add('btn-outline-success');
+                document.getElementById('pauseToastText').textContent = 'Stream paused';
+            } else {
+                pauseButton.textContent = 'Pause';
+                pauseButton.classList.remove('btn-outline-success');
+                pauseButton.classList.add('btn-outline-warning');
+                document.getElementById('pauseToastText').textContent = 'Stream resumed';
+                
+                // Process buffered messages
+                while (this.messageBuffer.length > 0) {
+                    this.appendMessage(this.messageBuffer.shift());
+                }
+            }
+            
+            this.showToast('pauseToast');
+        }
+
+        toggleFullscreen(element) {
+            if (!document.fullscreenElement) {
+                element.requestFullscreen().then(() => {
+                    document.getElementById('fullscreenToastText').textContent = 'Fullscreen enabled';
+                    this.showToast('fullscreenToast');
+                }).catch(err => {
+                    console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen().then(() => {
+                    document.getElementById('fullscreenToastText').textContent = 'Fullscreen disabled';
+                    this.showToast('fullscreenToast');
+                });
+            }
+        }
+
+        updateFullscreenButton() {
+            const fsButton = document.getElementById('fullscreenToggle');
+            const textSpan = fsButton.querySelector('.fullscreen-text');
+            
+            if (document.fullscreenElement) {
+                textSpan.textContent = 'Exit FS';
+                fsButton.title = 'Exit fullscreen';
+            } else {
+                textSpan.textContent = 'Fullscreen';
+                fsButton.title = 'Enter fullscreen';
+            }
+        }
+
+        showToast(toastId) {
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, {
+                delay: 2000
+            });
+            toast.show();
+        }
+
+        destroy() {
+            if (this.es) {
+                this.es.close();
+            }
+        }
+    }
+
+    // Initialize the terminal interface
+    const terminal = new TerminalInterface();
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        terminal.destroy();
+    });
+</script>
+{% endblock %}

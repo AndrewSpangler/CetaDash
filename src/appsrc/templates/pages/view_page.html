@@ -1,0 +1,55 @@
+{% extends "core.html" %}
+{% if not edit_box is defined %}{% set edit_box=True %}{% endif %}
+{% if not value_boxes is defined %}{% set value_boxes=[] %}{% endif %}
+
+{% from "macros/sections.html" import 
+  creator_editor_box,
+  with context
+%}
+
+{% macro view_page_header(obj, edit_box=True, value_boxes=[]) %}
+{% set actions=[] %}
+{% if edit_box %}
+{% set actions=[make_table_button(
+  edit_button_text,
+  url_args=[[edit_button_url],
+  edit_button_args],
+  classes=["bi", "bi-pencil"],
+  btn_type="primary",
+  float="left")]
+%}
+{% endif %}
+{% set value_box=creator_editor_box(obj) %}
+{{ container_header(
+  obj.name,
+  back_url,
+  back_text,
+  action_buttons = actions,
+  value_boxes = [value_box] + value_boxes
+) | safe }}
+{% endmacro %}
+
+
+{% block styles %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/theme/monokai.min.css">
+{% endblock %}
+
+{% block content %}
+{% autoescape false %}
+{{
+  container_start()
+  ~ view_page_header(obj, edit_box, value_boxes)
+}}
+<div class="card-body">
+{% block page_content %}{% endblock %}
+</div>
+{{ container_end() }}
+{% endautoescape %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/yaml/yaml.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/properties/properties.min.js"></script>
+{% endblock %}

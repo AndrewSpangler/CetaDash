@@ -1,0 +1,16 @@
+{% extends "core.html" %}
+
+{% block title %}DB:{{ database }}{% endblock %}
+
+{% block content %}
+{% autoescape False %}
+{{ container_start() }}
+{% set url = url_for('database_viewer.view', database=database) %}
+{% set page_title = 'DB: <a href="' ~ url ~ '">' ~ database ~ '</a>' %}
+{{ container_header(page_title | safe, 'database_viewer.view', 'Back to databases') }}
+<div class="card-body">
+  {% include "includes/database_table.html" %}
+</div>
+{{ container_end() }}
+{% endautoescape %}
+{% endblock %}

@@ -1,0 +1,11 @@
+{% set title=app.config["APPLICATION_NAME"] %}
+{% extends "pages/content_page.html" %}
+
+{% block card_content %}
+<center>
+  <h1>{{ app.config["APPLICATION_NAME"] }}</h1>
+  <b style="font-variant: small-caps;">{{ app.config["APPLICATION_DESCRIPTION"] | safe }}</b>
+  <br>
+  <p>{{ app.config["APPLICATION_DETAILS"] | markdown }}</p>
+</center>
+{% endblock %}

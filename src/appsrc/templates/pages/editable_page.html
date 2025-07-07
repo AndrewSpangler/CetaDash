@@ -1,0 +1,14 @@
+{% extends "pages/view_page.html" %}
+{% from "macros/sections.html" import 
+    details_description_card,
+    edit_logs_card
+    with context
+%}
+
+{% block page_content %}
+{% autoescape false %}
+{{ details_description_card(obj) }}
+{% block view_content %}{% endblock %}
+{{ edit_logs_card(obj, log_url_callback) }}
+{% endautoescape %}
+{% endblock %}

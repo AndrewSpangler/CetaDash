@@ -1,0 +1,12 @@
+<div style="float: right;">
+  <div class="container px-0 mx-0">
+    {% for k,v in items.items() %}
+    <div class="row">
+      <div class="col">
+        <span class="fw-bold small">{{k}}:&nbsp;&nbsp;</span>
+        <span class="float-end small">{{v}}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>

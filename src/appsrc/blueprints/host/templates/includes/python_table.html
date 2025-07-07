@@ -1,0 +1,29 @@
+<table class="table">
+  <tbody>
+    <tr>
+      <th scope="row">Python Version</th>
+      <td>{{ info.python_version }}</td>
+    </tr>
+    <tr>
+      <th scope="row">Flask Version</th>
+      <td>{{ info.flask_version }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="table table-striped" id="addresses_table" , width="100%">
+  <thead>
+    <tr>
+      <th>Module</th>
+      <th>Version</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for module in info.python_modules %}
+    <tr>
+      <td>{{ module["name"] }}</td>
+      <td>{{ module["version"] }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

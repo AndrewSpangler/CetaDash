@@ -1,0 +1,18 @@
+{% extends "pages/content_page.html" %}
+{% from "macros/sections.html" import data_table %}
+
+{% set title=(title or name) %}
+
+{% block card_content %}
+{% autoescape false %}
+{% if body_elements %}
+{% for elm in body_elements %}
+{{ elm }}
+{% endfor %}
+{% endif %}
+{{ 
+    data_table(name, columns, rows, custom_script, True)
+    ~ container_end()
+}}
+{% endautoescape %}
+{% endblock %}

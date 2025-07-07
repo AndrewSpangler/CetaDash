@@ -1,0 +1,16 @@
+<table class="table table-striped" id="addresses_table" , width="100%">
+  <thead>
+    <tr>
+      <th>Interface</th>
+      <th>IP Addresses</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for iface, ip in info.ips.items() %}
+    <tr>
+      <td>{{ iface }}</td>
+      <td>{{ "\n".join(ip) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

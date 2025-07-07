@@ -1,0 +1,23 @@
+<div class="card-header bg-dark text-white">
+  <div>
+    <div class="card-title-body" style="min-height: 0px;">
+      {% if back %}{{ back_text | back_link(back) }}{% endif %}
+      {{ header_title(title) }}
+      {% if action_buttons %}
+      {% for b in action_buttons %}
+      {{ b | safe }}
+      {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+  {% if header_elements %}
+  <div style="float: right;">
+    {% autoescape false %}{% for elm in header_elements %}{{ elm }}{% endfor %}{% endautoescape %}
+  </div>
+  {% endif %}
+  {% if value_boxes %}
+    {% for box in value_boxes %}
+      {{ box | safe}}
+    {% endfor %}
+  {% endif %}
+</div>

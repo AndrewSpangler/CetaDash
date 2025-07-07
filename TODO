@@ -1,0 +1,83 @@
+
+
+merge customtable and normal table js somehow (just call a macro?)
+add started and ended to run logs
+
+
+make confirm button a js script wrapper
+list of associated workflows in task
+
+series of dropdowns with labeled sections for run logs
+
+
+HIGH PRIORITY:
+ - Trigger logs store ran endpoint as string, save session id
+ - finish schedule trigger logs
+ - add workspace logging to container runtime errors (leverage the existing message queue to also write to stdout with context)
+ - add action buttons to container view page
+ - add layered env to trigger handling
+ - fix scheduled trigger workflow dropdown not updating properly
+
+GENERAL:
+ - sort logs by timestamp (most recent first)
+ - run counts on tasks/triggers etc
+ - docker page updates status / color periodically
+ - Add delete button to documents / other places
+ - add some dashboard tabs
+ - back button in changelog
+
+MACROS:
+ - move accordians to macros
+ - move search bar to macros
+ - make search bar standard option on table pages
+
+TRIGGERS:
+ - Attached / detached modes
+ - Start-if-not-existing
+ - stream vs redirect for endpoints in triggers
+ - trigger endpoint optional / disabled
+ - triggers disabled
+ - add box similar to container status for endpoint status
+ - make trigger day of week a series of checkboxes in editor
+
+SCHEDULED TRIGGERS: 
+ - fix trigger scheduler updates when changes are made
+ - run on launch or delayed
+ - store info on tasks that were scheduled but haven't run yet for future runs
+ - add box similar to container status for trigger status
+
+
+JSDATATABLES:
+ - move to macro
+ - move jsdatatable buttons to a dropdown
+ - consolidate custom and normal jsdatatables scripts
+ - attribute-based table factory?
+ - add arg to set table per-page for given pages that should be longer or shorter
+
+
+DOCU:
+ - write docu
+ - link docu to tasks/workflows/triggers
+
+LONG TERM:
+ - custom docker labels for cetadash
+ - separate proxy setup app
+ - containerized script runner (py, js, lua) [network optional]
+ - “process_changes" for logs, acts on before and after dict to generate a changelist
+ - ships (for presets)
+ - listeners for db edits (like triggers), eg "run container when new user is added to db"
+ - TRAEFIK
+    - auto-regen traefik acls
+ - NETWORK SCANNER / UPTIME MONITOR
+    - log scans
+
+
+figure out db-paginated tables for faster loads (see docu page?)
+loading message in tables?
+
+COSMETIC:
+ - fix bootstrap copy to clipboard popup theme
+ - per-user personal theme overrides from db
+
+
+TRACK EDIT VERSIONS IN RUN LOGS

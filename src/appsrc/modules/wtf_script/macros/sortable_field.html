@@ -1,0 +1,87 @@
+<label class="form-label">{{ label }}</label>
+<ul id="{{ field.id }}-list" class="list-group mb-2">
+  {% for item_id in field.data %}
+  {% set item = name_map[item_id] %}
+  <li class="list-group-item d-flex align-items-center border-secondary" data-index="{{ loop.index0 }}">
+    <span class="handle me-2" style="cursor: grab;">&#x2630;</span>
+    <span class="flex-grow-1 me-2">{{ item }}</span> 
+    <input type="hidden" name="{{ field.name }}-{{ loop.index0 }}" value="{{ item_id }}">
+    <button type="button" class="btn btn-sm btn-danger remove-item-btn">Remove</button>
+  </li>
+  {% endfor %}
+</ul>
+<div class="input-group">
+  <select id="{{ field.id }}-selector" class="form-select">
+    {% for item in items %}
+    <option value="{{ item.id }}">{{ item.name }}</option>
+    {% endfor %}
+  </select>
+  <button type="button" id="{{ field.id }}-add-btn" class="btn btn-outline-primary">Add Item</button>
+  {{ field_errors(field) }}
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const list = document.getElementById("{{ field.id }}-list");
+    const selector = document.getElementById("{{ field.id }}-selector");
+    const addBtn = document.getElementById("{{ field.id }}-add-btn");
+    const itemMap = {{ name_map | tojson
+  }};
+
+  function updateInputNames() {
+    list.querySelectorAll("li").forEach((li, index) => {
+      const input = li.querySelector("input");
+      input.name = "{{ field.name }}-" + index;
+      input.id = "{{ field.name }}-" + index;
+    });
+  }
+
+  function createItem(itemId, itemName) {
+    const index = list.children.length;
+    const li = document.createElement("li");
+    li.className = "list-group-item d-flex align-items-center border-secondary";
+    li.dataset.index = index;
+    li.innerHTML = `
+        <span class="handle me-2" style="cursor: grab;">&#x2630;</span>
+        <span class="flex-grow-1 me-2">${itemName}</span>
+        <input type="hidden" name="{{ field.name }}-${index}" id="{{ field.name }}-${index}" value="${itemId}">
+        <button type="button" class="btn btn-sm btn-danger remove-item-btn">Remove</button>
+      `;
+    list.appendChild(li);
+    updateInputNames();
+  }
+
+  addBtn.addEventListener("click", () => {
+    const selected = selector.selectedOptions[0];
+    if (!selected) return;
+
+    const itemId = selected.value;
+    const itemName = selected.textContent;
+
+    createItem(itemId, itemName);
+    selector.removeChild(selected);
+  });
+
+  list.addEventListener("click", (e) => {
+    if (e.target.classList.contains("remove-item-btn")) {
+      const li = e.target.closest("li");
+      const input = li.querySelector("input");
+      const itemId = input.value;
+
+      const option = document.createElement("option");
+      option.value = itemId;
+      option.textContent = itemMap[itemId];
+      selector.appendChild(option);
+
+      li.remove();
+      updateInputNames();
+    }
+  });
+
+  new Sortable(list, {
+    handle: ".handle",
+    animation: 150,
+    onEnd: updateInputNames
+  });
+  });
+</script>

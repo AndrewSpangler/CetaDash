@@ -1,0 +1,25 @@
+<table class="table table-striped" id="processes_table", width="100%">
+    <thead>
+        <tr>
+            <th>PID</th>
+            <th>Name</th>
+            <th>Status</th>
+            <th>CPU</th>
+            <th>Memory</th>
+            <th>Threads</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in info.processes %}
+        <tr>
+            <td>{{ p['pid'] }}</td>
+            <td>{{ p['name'] }}</td>
+            <td>{{ p['status'] }}</td>
+            <td>{{ p['cpu_percent'] }}%</td>
+            {% set mem = max(p['memory_info'].vms, p['memory_info'].rss) %}
+            <td>{{ "%0.2fMb"|format(mem / (1024 * 1024)) }}</td>
+            <td>{{ p['num_threads'] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

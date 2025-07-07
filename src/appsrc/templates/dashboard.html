@@ -1,0 +1,14 @@
+{% extends "core.html" %}
+{% set title=app.config["APPLICATION_NAME"] %}
+
+{% block content %}
+<div class="container">
+  <center class="mt-4">
+    <h1>{{app.config["APPLICATION_NAME"]}} Dashboard</h1>
+  </center>
+  {% include "includes/iframe_tabs.html" %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

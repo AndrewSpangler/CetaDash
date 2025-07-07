@@ -1,0 +1,10 @@
+<!-- Start Section {{id}} -->
+<div id="{{id}}-header" class="card-header bg-dark text-white py-1">
+    <button class="btn btn-link text-white w-100 text-start px-0 py-0" data-bs-toggle="collapse"
+      data-bs-target="#{{id}}-body" aria-expanded="true" aria-controls="{{section_name}}-body"
+      onclick="toggleChevronIcon(this)">
+      <b class="mb-0 font-monospace">{{label}}<i class="bi bi-chevron-down float-end"></i></b>
+    </button>
+  </div>
+  <div id="{{id}}-body" class="collapse show" aria-labelledby="{{section_name}}-header">
+    <div class="card-body">

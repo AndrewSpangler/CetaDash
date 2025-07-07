@@ -1,0 +1,17 @@
+{% extends "core.html" %}
+
+{% if not header_elements is defined %}{% set header_elements=None %}{% endif %}
+
+{% block content %}
+{% autoescape false %}
+{{ 
+  container_start() 
+  ~ container_header(title, header_elements=header_elements)
+  | safe
+}}
+<div class="card-body">
+  {% block card_content %}{% endblock %}
+</div>
+{{ container_end() }}
+{% endautoescape %}
+{% endblock %}

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>{% block title %}{{ title }}{% endblock %}</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <!-- DataTables + Dependencies CSS -->
+  <link href="https://cdn.datatables.net/v/dt/jszip-3.10.1/dt-2.0.1/b-3.0.0/b-html5-3.0.0/b-print-3.0.0/datatables.min.css" rel="stylesheet">
+  <!-- DataTables FixedHeader CSS -->
+  <link href="https://cdn.datatables.net/fixedheader/3.2.0/css/fixedHeader.dataTables.min.css" rel="stylesheet">
+  <!-- Simple Markdown Editor CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simplemde@1.11.2/dist/simplemde.min.css">
+  <!-- Simple CodeMirror CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.css">
+
+  <!-- Bootswatch theming -->
+  {% if current_user.selected_theme and not current_user.selected_theme == "default" %}
+  {% autoescape false %}
+  <link href="{{ url_for('static', filename='css/bootswatch/bootswatch.'+(current_user.selected_theme or '') + '.min.css') }}" rel="stylesheet">
+  {% endautoescape %}
+  {% endif %}
+
+  <!-- Local CSS / Override -->
+  <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+  {% block styles %}{% endblock %}
+  
+</head>
+
+
+{% macro nav_link_item(name, link) %}
+  {% if not name.startswith("admin:") or current_user.is_authenticated and current_user.permission_integer >= app.models.core.PERMISSION_ENUM.ADMIN %}
+    <li class="nav-item">
+      <a class="nav-link" href="{{ url_for(link) }}">{{ name.replace("admin:", "", 1) }}</a>
+    </li>
+  {% endif %}
+{% endmacro %}
+
+
+{% macro nav_dropdown(name, links) %}
+  {% if not name.startswith("admin:") or current_user.is_authenticated and current_user.permission_integer >= app.models.core.PERMISSION_ENUM.ADMIN %}
+    <li class="nav-item dropdown">
+      <a class="nav-link dropdown-toggle" href="#" id="{{ name | replace(' ', '') }}Dropdown" role="button" data-bs-toggle="dropdown">
+        {{ name.replace("admin:", "", 1) }}
+      </a>
+      <div class="dropdown-menu bg-dark" aria-labelledby="{{ name | replace(' ', '') }}Dropdown">
+        {% for link_name, link_link in links.items() %}
+          {% if link_name.startswith("admin:") %}
+            {% if current_user.is_authenticated and current_user.permission_integer >= app.models.core.PERMISSION_ENUM.ADMIN %}
+              <a class="dropdown-item text-light" href="{{ url_for(link_link) }}">{{ link_name.replace("admin:", "", 1) }}</a>
+            {% endif %}
+          {% else %}
+            <a class="dropdown-item text-light" href="{{ url_for(link_link) }}">{{ link_name }}</a>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </li>
+  {% endif %}
+{% endmacro %}
+
+
+<body>
+  {% if nav_enabled %}
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark m-0 hard-shadow">
+    <div class="container-fluid">
+      <a class="navbar-brand nav-link font-monospace" href="{{ url_for('dashboard') }}">{{ app.config['APPLICATION_NAME'] }}</a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav">
+          {% for name, link in app.config['NAV_LINKS'].items() %}
+            {% if link is mapping %}
+              {{ nav_dropdown(name, link) }}
+            {% else %}
+              {{ nav_link_item(name, link) }}
+            {% endif %}
+          {% endfor %}
+        </ul>
+
+        <ul class="navbar-nav ms-auto">
+          {% if current_user.is_authenticated and current_user.permission_integer >= app.models.core.PERMISSION_ENUM.ADMIN %}
+            {{ nav_dropdown("Admin", app.config['ADMIN_NAV_LINKS']) }}
+          {% endif %}
+
+          {% if current_user.is_authenticated %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="themeDropdown" role="button" data-bs-toggle="dropdown">
+              Theme:{{ current_user.selected_theme.capitalize() or "" }}
+            </a>
+            <div class="dropdown-menu bg-dark" aria-labelledby="themeDropdown">
+              <form id="themeForm" class="theme-selector" action="{{ url_for('apply_theme') }}" method="post">
+                {% for theme in themes %}
+                  <button type="submit" class="dropdown-item text-light" name="theme" value="{{ theme }}" {% if current_user.selected_theme == theme %} selected {% endif %}>
+                    {{ theme|capitalize }}
+                  </button>
+                {% endfor %}
+              </form>
+            </div>
+          </li>
+          {% endif %}
+
+          <button type="button" class="btn table_button bi bi-search zoom-button text-light" id="zoomButton" onclick="toggleZoom()"></button>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  {% endif %}
+
+  <div class="alert-container">
+    {% autoescape false %}
+    {% for category, message in get_flashed_messages(with_categories=True) %}
+    <div class="alert {% if category == 'error' %}alert-danger{% elif category == 'warning' %}alert-warning{% elif category == 'success' %}alert-success{% else %}alert-info{% endif %}"
+      role="alert" style="max-width: 500px;">
+      <div class="d-flex justify-content-between align-items-center">
+        <span class="text-black text-small">{{ message }} &nbsp;</span>
+        <button type="button" class="alert-close bi bi-x-circle-fill" onclick="deleteMessage(this)">
+          <span> </span>
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+    {% endautoescape %}
+  </div>
+
+  <main class="{{ '' if not light_background else 'card-body mt-0' }}" >
+    {% block content %}{% endblock %}
+  </main>
+
+  {% if nav_enabled %}
+  <div id="modalWrapper" class="terminal_div d-flex flex-column">
+    <div class="modal fade" id="iframeModal" tabindex="-1" aria-labelledby="iframeModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl bg-transparent">
+        <div class="modal-content bg-transparent" id="modal-content">
+          <div class="modal-header d-flex align-items-center bg-dark text-light">
+            <h5 class="modal-title flex-grow-1" id="iframeModalLabel"></h5>
+            <div class="d-flex gap-2">
+              <button id="fillButton" class="btn btn-sm btn-outline-primary px-2">Fill Window</button>
+              <button id="exitButton" style="float: right;" class="btn-close btn-close-white" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+          </div>
+          <div class="modal-body p-0" style="height: 85vh; min-height: 85vh;">
+            <iframe id="iframeViewer" src="" class="w-100 h-100 border-0" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="navbar-dark bg-dark text-light text-center py">
+    <div class="container">
+      <p><a href="{{url_for('about')}}">{{ app.config["APPLICATION_NAME"] }}</a><br>{{ app.config['FOOTER_TEXT'] }}</p>
+    </div>
+  </footer>
+  {% endif %}
+
+  <!-- JQuery JavaScript -->
+  <script src="https://code.jquery.com/jquery-3.6.4.slim.min.js"></script>
+  <!-- Bootstrap + Popper JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- DataTables + Dependencies JS -->
+  <script src="https://cdn.datatables.net/v/dt/jszip-3.10.1/dt-2.0.1/b-3.0.0/b-html5-3.0.0/b-print-3.0.0/datatables.min.js"></script>
+  <!-- DataTables PDF JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+  <!-- DataTables FixedHeader JS -->
+  <script type="text/javascript" src="https://cdn.datatables.net/fixedheader/3.2.0/js/dataTables.fixedHeader.min.js"></script>
+  <!-- Dragable sortable lists JS -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <!-- Simplemde JS -->
+  <script src="https://cdn.jsdelivr.net/npm/simplemde@1.11.2/dist/simplemde.min.js"></script>
+  <!-- Functions used by multiple scripts JS -->
+  
+  {% if nav_enabled %}
+  <script>
+    const fillButton = document.getElementById('fillButton');
+    const modal = document.getElementById('modal-content');
+    const exitButton = document.getElementById('exitButton');
+    const modalWrapper = document.getElementById('modalWrapper');
+  
+    function handleEscape(event) {
+      if (event.key === 'Escape') {
+        modalWrapper.classList.remove('modal-expanded');
+        modal.classList.remove('expanded-modal-content');
+        fillButton.textContent = 'Fill Window';
+        document.removeEventListener('keydown', handleEscape);
+      }
+    }
+  
+    fillButton.addEventListener('click', () => {
+      const isExpanded = modalWrapper.classList.toggle('modal-expanded');
+      modal.classList.toggle('expanded-modal-content');
+      fillButton.textContent = isExpanded ? 'Exit Fill' : 'Fill Window';
+  
+      if (isExpanded) {
+        document.addEventListener('keydown', handleEscape);
+      } else {
+        document.removeEventListener('keydown', handleEscape);
+      }
+    });
+  
+    exitButton.addEventListener('click', () => {
+      modalWrapper.classList.remove('modal-expanded');
+      modal.classList.remove('expanded-modal-content');
+      fillButton.textContent = 'Fill Window';
+      document.removeEventListener('keydown', handleEscape);
+    });
+  </script>
+  {% endif %}
+  
+  {% block scripts %}{% endblock %}
+
+  <script src="{{ url_for('static', filename='js/main.js')}}"></script>
+  <!-- Custom jsdatatable JS -->
+  <script src="{{ url_for('static', filename='js/data_table_script.js')}}"></script>
+</body>
+
+</html>

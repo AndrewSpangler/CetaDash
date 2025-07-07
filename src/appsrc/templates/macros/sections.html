@@ -1,0 +1,253 @@
+{% macro make_table_button(
+  text="",
+  url_args=("",{}),
+  on_submit=None,
+  btn_type="success",
+  classes=[],
+  float="left",
+  do_action=True,
+  on_click=None,
+  tooltip=None,
+  method="POST"
+) %}
+{% if do_action %}
+<form class="table-button-form" style="float:{{float}};" 
+  method={{method}}
+  action="{{url_for(url_args[0], **url_args[1])}}"
+  {% if on_submit %}
+    onsubmit="return confirm('{{on_submit | safe}}');"
+  {% endif %}
+>
+{% endif %}
+<button 
+{% if on_click %}
+  onclick="{{ on_click | safe }}"
+{% else %}
+  type="submit"
+{% endif %}
+{% if tooltip %}
+  data-bs-toggle="tooltip"
+  data-bs-placement="top"
+  data-bs-html="true"
+  title="{{tooltip}}"
+{% endif %}
+class="btn btn-{{btn_type}} table-button {% if tooltip %}table-tooltip{% endif %} {{' '.join(classes)}}"
+style="float:{{float}};">
+{{text}}
+</button>
+{% if do_action %}
+</form>
+{% endif %}
+{% endmacro %}
+
+
+{% macro creator_editor_box(obj) %}
+{{ header_value_box({
+  "Creator" : obj.creator.name,
+  "Created At" : obj.created_at_pretty,
+  "Last Editor": obj.last_editor.name if obj.last_editor else 'None',
+  "Last Edited At": obj.edited_at_pretty if obj.edited_at else "Never"
+}) | safe }}
+{% endmacro %}
+
+
+{% macro details_description_card(obj) %}
+{{ section_card_start("description", "About", "my-3 mt-0") | safe }}
+<div class="card-body markdown-content">
+  {% if obj.description %}
+  {{ obj.description | markdown }}
+  {% else %}
+  <center><p class="mt-2"><i>Description is empty.</i></p></center>
+  {% endif %}
+  <hr>
+  {% if obj.details %}
+  {{ obj.details | markdown }}
+  {% else %}
+  <center><p class="mt-2"><i>Details are empty.</i></p></center>
+  {% endif %}
+</div>
+{{ section_card_end("description") | safe }}
+{% endmacro %}
+
+
+{% macro edit_logs_card(obj, log_url_callback) %}
+{{ section_card_start("edit-log", "Edit Logs", "my-3 mt-0") | safe }}
+<table class="table table-striped" id="edit_log_table" width="100%">
+  {{
+    (
+      "Edit ID"          | th
+      ~ "Edit Timestamp" | th
+      ~ "Editor"         | th
+      ~ "Edit Action"    | th
+    ) | tr | thead | safe
+  }}
+  <tbody>
+    {% for log in obj.edit_logs %}
+    {{
+      (
+        log_url_callback(log)   | td
+        ~ log.timestamp_pretty  | td
+        ~ log.user.name         | td
+        ~ app.models.docker.ACTION_ENUM._NAMES[log.action] | td
+      ) | tr | safe
+    }}
+    {% endfor %}
+  </tbody>
+</table>
+{{ section_card_end("edit-logs") | safe }}
+{% endmacro %}
+
+
+{% macro make_script(name, script) %}
+$(document).ready(function () {
+  $('[id$="{{name}}_customtable"]').each(function () {
+      var table = $(this).DataTable({
+          scrollX: true,
+          "pageLength": 25,
+          aaSorting: [],
+          columnDefs: [
+              { targets: "_all", className: "dt-left dt-body-left display dt-no-padding" },
+              { type: "string", targets: 0 }
+          ],
+          "oLanguage": {
+              "sSearch": "",
+              "sSearchPlaceholder": "Filter Results",
+              "sLengthMenu": "_MENU_",
+          },
+          "createdRow": function (row, data, dataIndex) {
+              var table = $(this).DataTable();
+              var tableId = table.settings()[0].sTableId;
+              var rawTable = document.getElementById(tableId);
+              var headersRow = rawTable.rows[0];
+              var headerCells = headersRow.cells;
+              
+              {% if script %}
+              {{ script | safe}}
+              {% endif %}
+
+              //var color =;
+              //$(row).css('background-color', color); 
+              $(row).css('background-opacity', 0.5); 
+          },
+          layout: {
+              top1Start: {
+                  search: {
+                  },
+                  pageLength: {
+                      menu: [10, 25, 50, 100, 200, 1000]
+                  },
+                  buttons: [
+                      'copyHtml5',
+                      'excelHtml5',
+                      'csvHtml5',
+                      'pdfHtml5',
+                  ],
+              },
+              top1End: null,
+              topStart: 'info',
+              topEnd: 'paging',
+              bottomStart: 'info',
+              bottomEnd: 'paging'
+          },
+          "initComplete": function () {
+              var api = this.api();
+              var table = api.table(); // Current table
+              var btns = $(table.table().container()).find('.dt-button');
+              btns.addClass('bi');
+              var icon_map = {
+                  "PDF": "bi-filetype-pdf",
+                  "CSV": "bi-filetype-csv",
+                  "Excel":"bi-file-earmark-spreadsheet",
+                  "Copy": "bi-copy",
+              }
+
+              btns.each(function () {
+                  var buttonText = $(this).text().trim();
+                  $(this).addClass(icon_map[buttonText]);
+              });
+              
+
+              btns.addClass('datatables-export text-muted');
+
+              btns.each(function() {
+                  $(this).find('span').prepend('&nbsp;');
+              });
+
+              var mutedColor = getComputedColor('text-primary');
+              var filterInput = $(api.table().container()).find('.dt-input input');
+              filterInput.css('color', mutedColor);
+
+              $(table.table().container()).find('.dt-info').addClass("text-normal");
+              $(table.table().container()).find('.dt-length').find("label").addClass("text-normal");
+              $(api.table().header()).find('th').addClass('bg-dark text-light');
+
+              var primarycolor = getComputedColor('text-light');
+              // Dynamically inject CSS to set placeholder color
+              var style = document.createElement('style');
+              style.innerHTML = '.dt-column-search-input::placeholder { color: ' + primarycolor + '; }';
+              document.getElementsByTagName('head')[0].appendChild(style);
+
+              $(api.table().header()).find('th').each(function (index) {
+                  var column = table.column(index);
+                  var title = $(this).text();
+                  $(this).html(
+                      '<input type="text" class="dt-column-search-input bg-transparent mx-0 my-0 text-light" placeholder="'
+                      + title + '" /><span class="dt-column-title" role="button" style="display:none;">' + title
+                      + '</span><span class="dt-column-order" style="right:0px;top:-4px;"></span>'
+                  );
+                  $('input', this).on('click', function (e) {
+                      e.stopPropagation(); // Prevent propagation to avoid sorting
+                  });
+                  $('input', this).on('keyup change', function () {
+                      if (column.search() !== this.value) {
+                          column.search(this.value).draw();
+                      }
+                  });
+              });
+              $(api.table().header()).find('th').on('click', function (e) {
+                  e.preventDefault(); 
+              });
+
+          }
+      });
+      new $.fn.dataTable.FixedHeader(table);
+  });
+});
+{% endmacro %}
+
+
+{% macro data_table(
+  name,
+  columns = [],
+  rows = [],
+  custom_script = 'console.log("Table loaded");',
+  for_page = False
+) %}
+<table class="table table-striped table-hoverable table-sm" id="{{name}}_{% if custom_script %}customtable{% else %}table{% endif %}" width="100%">
+  <thead>
+    <tr>
+      {% for col in columns %}
+      <th>{{ col | safe }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      {% for td in row %}
+      <td>{{td | safe}}</td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% if custom_script %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+ {{ make_script(name, custom_script) | safe }}
+});
+</script>
+{% endif %}
+{% endmacro %}
+
+

@@ -1,0 +1,29 @@
+{% extends "pages/form_page.html" %}
+
+{% block form_content %}
+{% autoescape false %}
+<div class="card-body my-0 py-0">
+{{ 
+form.hidden_tag()
+~ (
+  form.name
+    | string_field
+    | col("mt-0 mb-1")
+  ~ form.description
+    | textarea_field
+    | col("mt-0 mb-1")
+) | row("mb-0")
+
+~ form.details 
+  | md_field
+  | col("my-0")
+  | row
+
+~ form.content
+  | md_field
+  | col("my-0")
+  | row
+}}
+</div>
+{% endautoescape %}
+{% endblock %}

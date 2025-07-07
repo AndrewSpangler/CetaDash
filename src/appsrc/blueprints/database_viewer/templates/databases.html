@@ -1,0 +1,15 @@
+{% extends "core.html" %}
+{% set title = "Databases" %}
+
+{% block content %}
+{% autoescape False %}
+{{ 
+  container_start()
+  ~ container_header('Databases')
+}}
+<div class="card-body">
+  {% include "includes/databases_table.html" %}
+</div>
+{{ container_end() }}
+{% endautoescape %}
+{% endblock %}

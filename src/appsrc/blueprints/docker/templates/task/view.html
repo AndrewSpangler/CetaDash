@@ -1,0 +1,41 @@
+{% from "macros/docker.html" import
+  task_log_table,
+  task_scheduled_log_table,
+  task_edit_log_link
+  with context
+%}
+
+{% set obj = task %}
+{% set back_url = "docker.tasks.index" %}
+{% set back_text = "Back to Workflow Tasks" %}
+{% set page_title = task.name %}
+{% set edit_button_text = "Edit Workflow Task" %}
+{% set edit_button_url = "docker.tasks.edit" %}
+{% set edit_button_args = {"task_id":task.id} %}
+
+{% set log_url_callback = task_edit_log_link %}
+
+{% extends "pages/editable_page.html" %}
+{% block title %}View Workflow Task{% endblock %}
+
+{% block view_content %}
+{% autoescape false %}
+
+{{
+  (
+    (task.template or "")
+      | yaml_viewer("template", "Template")
+    ~ (task.environment or "")
+      | env_viewer("environment", "Environment")
+  ) | row
+    | section_card("config", "Configuration Files")
+
+  ~ task_log_table(task)
+    | section_card("logs", "Run Logs")
+  
+  ~ task_scheduled_log_table(task)
+    | section_card("scheduled-logs", "Scheduled Run Logs")
+}}
+
+{% endautoescape %}
+{% endblock %}

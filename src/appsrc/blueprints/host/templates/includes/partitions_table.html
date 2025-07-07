@@ -1,0 +1,24 @@
+<table class="table table-striped" id="processes_table", width="100%">
+    <thead>
+        <tr>
+            <th>Device</th>
+            <th>Mountpoint</th>
+            <th>Total</th>
+            <th>Free</th>
+            <th>Used</th>
+            <th>%</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for dev, data in info.disk_info.items() %}
+        <tr>
+            <td>{{ dev }}</td>
+            <td>{{ data['mountpoint'] }}</td>
+            <td>{{ format_bytes(data['total']) }}</td>
+            <td>{{ format_bytes(data['free']) }}</td>
+            <td>{{ format_bytes(data['used']) }}</td>
+            <td>{{ data['percent_used'] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

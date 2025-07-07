@@ -1,0 +1,9 @@
+<div class="mb-0 bg-light px-0">
+    {% autoescape false %}
+    {% if field %}
+        {{ field(class="form-control text_mdeform", value=content or "") }}
+    {% else %}
+        <textarea class="form-control text_mdeform" id="{{ id or 'content' }}" rows="10">{{ content or "" }}</textarea>
+    {% endif %}
+    {% endautoescape %}
+</div>

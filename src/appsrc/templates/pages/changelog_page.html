@@ -1,0 +1,13 @@
+{% extends "pages/content_page.html" %}
+
+{% block card_content %}
+{% autoescape false %}
+{{
+(edit_log.message or "NO LOG CONTENT")
+  | replace("\n", "<br>")
+  | col("font-monospace")
+  | row
+  | section_card("changes", "Changes")
+}}
+{% endautoescape %}
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "core.html" %}
+
+{% block title %}Object:{{ database }}::{{ table }}::{{ object.id }}{% endblock %}
+
+{% block content %}
+{% autoescape False %}
+
+{% set url_db=url_for('database_viewer.view', database=database) %}
+{% set url_table=url_for('database_viewer.view', database=database, table=table) %}
+{% set url_db=url_for('database_viewer.view', database=database) %}
+{% set url_object=url_for('database_viewer.view', database=database, table=table, uid=object.id) %}
+
+{% set page_title = (
+  'Table: <a href="' ~ url_db ~ '">' ~ database ~ '</a>::'
+  ~ '<a href="' ~ url_table ~ '">' ~ table ~ '</a>::'
+  ~ '<a href="' ~ url_object ~ '">' ~ object.id ~ '</a>'
+) %}
+
+{{ container_start() }}
+{{ container_header(page_title, 'database_viewer.view', 'Back to databases') }}
+<div class="card-body">
+  <table class="table table-striped" id="databases_table" width="100%">
+    <thead>
+      <tr>
+        <th>Column</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for column, value in object.__dict__.items() %}
+      {% if not column.startswith('_') %}
+      <tr>
+        <th><b>{{ column }}</b></th>
+        <td>{{ value }}</td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{{ container_end() }}
+
+{% endautoescape %}
+{% endblock %}

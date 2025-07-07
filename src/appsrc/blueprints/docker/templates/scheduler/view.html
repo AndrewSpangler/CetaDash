@@ -1,0 +1,92 @@
+{% from "macros/docker.html" import 
+  trigger_log_table,
+  scheduler_edit_log_link
+  with context
+%}
+
+{% set obj = trigger %}
+{% set back_url = "docker.scheduler.index" %}
+{% set back_text = "Back to Scheduled Triggers" %}
+{% set page_title = trigger.name %}
+{% set title = "View Scheduled Trigger" %}
+{% set edit_button_text = "Edit Scheduled Trigger" %}
+{% set edit_button_url = "docker.scheduler.edit" %}
+{% set edit_button_args = {"trigger_id":trigger.id} %}
+
+{% set log_url_callback = scheduler_edit_log_link %}
+
+{% extends "pages/editable_page.html" %}
+
+{% block styles %}
+{{ super() }}
+<style>
+  .schedule-info {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #dee2e6;
+  }
+</style>
+{% endblock %}
+
+
+{% macro make_trigger_card(trigger) %}
+  <h5 class="mb-2">
+    <a href="{{url_for('docker.workflows.view', workflow_id=trigger.workflow.id)}}" class="text-decoration-none">
+      {{ trigger.workflow.name }}
+    </a>
+    <span class="fs-5">
+      @
+      {% if trigger.job_type == 'cron' %}
+      {% if trigger.day_of_week %}{{ trigger.day_of_week }}{% else %}daily{% endif %}
+      {% if trigger.hour is not none and trigger.minute is not none %}
+      at {{ "%02d"|format(trigger.hour) }}:{{ "%02d"|format(trigger.minute) }}
+      {% elif trigger.hour is not none %}
+      at {{ "%02d"|format(trigger.hour) }}:00
+      {% elif trigger.minute is not none %}
+      at *:{{ "%02d"|format(trigger.minute) }}
+      {% endif %}
+      {% elif trigger.job_type == 'interval' %}
+      interval -
+      {% if trigger.hours %}{{ "%02d"|format(trigger.hours) }}h{% endif %}{% if trigger.minutes %}{{
+      "%02d"|format(trigger.minutes) }}m{% endif %}{% if trigger.seconds %}{{ "%02d"|format(trigger.seconds) }}s{%
+      endif %}
+      {% endif %}
+    </span>
+  </h5>
+{% endmacro %}
+
+{% macro make_enabled_badge(trigger) %}
+  {% if trigger.enabled %}
+  {{ "Enabled" | badge("success") | safe }}
+  {% else %}
+  {{ "Disabled" | badge("danger") | safe }}
+  {% endif %}
+{% endmacro %}
+
+
+{% block view_content %}
+{% autoescape false %}
+{{
+(
+  (
+    make_trigger_card(trigger) | div("flex-grow-1")
+    ~ make_enabled_badge(trigger) | div("text-end")
+  )
+    | div("d-flex justify-content-between align-items-start")
+    | div("schedule-info")
+    | div("card-body mb-0 pb-1 pt-2")
+
+  ~(
+    (trigger.headers or "")
+      | yaml_viewer("headers", "Jinja Variables")
+    ~ (trigger.environment or "")
+      | env_viewer("environment", "Environment")
+  ) | row
+    | div("card-body mt-0 pt-1")
+) | section_card("config", "Configuration")
+
+~ trigger_log_table(trigger)
+  | section_card("trigger-log", "Run Logs")
+}}
+{% endautoescape %}
+{% endblock %}

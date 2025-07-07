@@ -1,0 +1,30 @@
+{% extends "core.html" %}
+
+{% block title %}Table:{{ database }}::{{ table }}{% endblock %}
+
+{% block content %}
+{% autoescape False %}
+
+{% set url_db=url_for('database_viewer.view', database=database) %}
+{% set url_table=url_for('database_viewer.view', database=database, table=table) %}
+
+{% set page_title = (
+  'Table: <a href="' ~ url_db ~ '">' ~ database ~ '</a>::'
+  ~ '<a href="' ~ url_table ~ '">' ~ table ~ '</a>'
+) %}
+  
+{{ container_start() }}
+{{ container_header(page_title, 'database_viewer.view', 'Back to databases') }}
+<div class="card-body">
+  {% set query_arg = "q" %}
+  {% set button_text = "Search" %}
+  {% set placeholder_text = "Search Table" %}
+  {% set search_query = query %}
+  {% set endpoint = url_for("database_viewer.view", database=database, table=table) %}
+  {% include "includes/search_bar.html" %}
+  <hr>
+  {% include "includes/table_table.html" %}
+</div>
+{{ container_end() }}
+{% endautoescape %}
+{% endblock %}

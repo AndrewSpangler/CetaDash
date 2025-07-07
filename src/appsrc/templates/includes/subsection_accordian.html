@@ -1,0 +1,23 @@
+<div id="{{sub_section}}-accordion" class="mt-0">
+    {% for sub_section, (sub_name, sub_template) in sub_sections.items() %}
+    {% if loop.last %}
+    <div class="card">
+    {% else %}
+    <div class="card mb-2">
+    {% endif %}
+        <div id="{{sub_section}}-header" class="card-header bg-dark card-padding">
+            <button class="btn btn-link text-light" data-bs-toggle="collapse" data-bs-target="#{{sub_section}}-body" aria-expanded="true" aria-controls="{{sub_section}}-body" onclick="toggleChevronIcon(this)">
+                <b class="mb-0">
+                    {{ sub_name }}
+                    <i class="bi bi-chevron-down float-end"></i>
+                </b>
+            </button>
+        </div>
+        <div id="{{sub_section}}-body" class="collapse show" aria-labelledby="{{sub_section}}-header" data-parent="#{{sub_section}}-accordion">
+            <div class="card-body">
+                {% include sub_template %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>

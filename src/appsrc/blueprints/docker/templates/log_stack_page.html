@@ -1,0 +1,226 @@
+{% extends "pages/content_page.html" %}
+
+{% from "macros/docker.html" import 
+  task_link,
+  workflow_link,
+  trigger_link
+  with context
+%}
+
+{% if not header_elements is defined %}{% set header_elements=None %}{% endif %}
+{% set title="Log Stack for " + log.id|string %}
+
+
+{# Macro for trigger log table row #}
+{% macro trigger_log_row(log) %}
+{{ 
+    (
+        log.id|string
+          | td
+        ~ ("[" ~ log.workflow_trigger.id ~ "] " ~ log.workflow_trigger.name)
+            | a(url_for("docker.triggers.view", trigger_id=log.workflow_trigger.id))
+            | td
+        ~ app.models.docker.STATUS_ENUM._NAMES[log.status]
+            | badge("danger" if log.status == 1 else ("success" if log.status == 0 else "danger"))
+            | td
+        ~ (log.user.name if log.user else "System")
+            | td
+        ~ log.timestamp_pretty
+            | td
+    ) | safe
+}}
+{% endmacro %}
+
+{# Macro for workflow log table row #}
+{% macro workflow_log_row(workflow_log) %}
+{{ 
+  (
+    workflow_log.id|string
+      | td
+    ~ ("[" ~ workflow_log.workflow.id ~ "] " ~ workflow_log.workflow.name)
+      | a(url_for("docker.workflows.view", workflow_id=workflow_log.workflow.id))
+      | td
+    ~ app.models.docker.STATUS_ENUM._NAMES[workflow_log.status]
+      | badge("danger" if workflow_log.status == 1 else ("success" if workflow_log.status == 0 else "danger"))
+      | td
+    ~ (workflow_log.user.name if workflow_log.user else "System")
+      | td
+    ~ workflow_log.timestamp_pretty
+      | td
+  ) | safe
+}}
+{% endmacro %}
+
+{# Macro for task log table row #}
+{% macro task_log_row(task_log, index) %}
+{{ 
+  (
+    (index + 1)|string
+      | td
+    ~ ("[" ~ task_log.task.id ~ "] " ~ task_log.task.name)
+      | a(url_for("docker.tasks.view", task_id=task_log.task.id))
+      | td
+    ~ app.models.docker.STATUS_ENUM._NAMES[task_log.status]
+      | badge("danger" if task_log.status == 1 else ("success" if task_log.status == 0 else "danger"))
+      | td
+    ~ (task_log.user.name if task_log.user else "System")
+      | td
+    ~ task_log.timestamp_pretty
+      | td
+  ) | safe
+}}
+{% endmacro %}
+
+{# Macro to generate all task log rows #}
+{% macro task_logs_rows(task_logs) %}
+{% for task_log in task_logs %}
+{{ task_log_row(task_log, loop.index0) | tr | safe }}
+{% endfor %}
+{% endmacro %}
+
+{# Macro for table header #}
+{% macro table_header(columns) %}
+{% set header_cells = [] %}
+{% for column in columns %}
+{% if header_cells.append(column | th) %}{% endif %}
+{% endfor %}
+{{ header_cells | join("") | tr | thead | safe }}
+{% endmacro %}
+
+{# Macro for trigger log table #}
+{% macro trigger_log_table(log) %}
+{{ 
+  (
+    table_header(["ID", "Trigger", "Status", "User", "Timestamp"])
+    ~ trigger_log_row(log)
+      | tr
+      | tbody
+  ) | safe
+}}
+{% endmacro %}
+
+{# Macro for workflow log table #}
+{% macro workflow_log_table(workflow_log) %}
+{{ 
+  (
+    table_header(["ID", "Workflow", "Status", "User", "Timestamp"])
+    ~ workflow_log_row(workflow_log)
+      | tr
+      | tbody
+  ) | safe
+}}
+{% endmacro %}
+
+{# Macro for task logs table #}
+{% macro task_logs_table(task_logs) %}
+{{ 
+  (
+    table_header(["Priority", "Task", "Status", "User", "Timestamp"])
+    ~ task_logs_rows(task_logs)
+      | tbody
+  ) | safe
+}}
+{% endmacro %}
+
+
+
+
+{% macro workflow_info(workflow_log) %}
+{{
+  (
+    app.models.docker.STATUS_ENUM._NAMES[workflow_log.status]
+      | badge("danger" if workflow_log.status == 1 else ("success" if workflow_log.status == 0 else "danger"))
+    ~ " "  
+    ~ workflow_link(workflow_log.workflow)
+    ~ "<i> by </i>"
+    ~ workflow_log.user.name
+    ~ " @"
+    ~ workflow_log.timestamp_pretty
+  ) | div("my-1 mx-1")
+    | col
+    | row
+    | safe
+}}
+{% endmacro %}
+
+
+{% macro workflow_task_info(task_logs) %}
+{% for task_log in task_logs %}
+  {{ 
+    (
+      ("Step " ~ ( loop.index | string))
+        | badge("danger" if task_log.status == 1 else ("success" if task_log.status == 0 else "warning"))
+      ~ " "
+      ~ task_link(task_log.task) 
+      ~ "@"
+      ~ task_log.timestamp_pretty
+    ) | div("my-1 mx-1")
+      | col("col-12")
+      | safe
+  }}
+{% endfor %}
+{% endmacro %}
+
+{% macro trigger_info(trigger) %}
+{{
+  (
+    app.models.docker.STATUS_ENUM._NAMES[log.status]
+      | badge("danger" if log.status == 1 else ("success" if log.status == 0 else "danger"))
+    ~ " "  
+    ~ ("[" ~ trigger.id ~ "] " ~ trigger.name)
+      | a(url_for("docker.triggers.view", trigger_id=trigger.id))
+    ~ "<i> on </i>"
+    ~ trigger.endpoint
+    ~ "<i> by </i>"
+    ~ log.user.name
+    ~ " @"
+    ~ log.timestamp_pretty
+  ) | div("my-1 mx-1")
+    | col
+    | row
+    | safe
+}}
+{% endmacro %}
+
+
+
+
+{# Macro for log details section #}
+{% macro log_details_section(log) %}
+{{ 
+  (
+    "Trigger"
+      | icon_heading("rocket-takeoff")
+    ~ trigger_info(log.workflow_trigger)
+
+    ~ "Workflow"
+      | icon_heading("card-checklist")
+    ~ workflow_info(log.workflow_log)
+
+    ~ "Workflow Tasks"
+      | icon_heading("stack")
+    ~ workflow_task_info(log.workflow_log.task_logs)
+      | row | col
+  ) | row | safe
+}}
+{% endmacro %}
+
+{% block card_content %}
+{% autoescape false %}
+
+{{
+  log_details_section(log)
+    | section_card("log-details", "Log Details", "mt-0")
+  ~ trigger_log_table(log)
+    | table(classes="table-striped")
+    | section_card("trigger-log", "Trigger Log")
+  ~ workflow_log_table(log.workflow_log)
+    | table(classes="table-striped")
+    | section_card("workflow-log", "Workflow Log")
+  ~ task_logs_table(log.workflow_log.task_logs)
+    | table(classes="table-striped")
+    | section_card("task-logs", "Task Logs")
+}}
+
+{% endautoescape %}
+{% endblock %}

@@ -1,0 +1,18 @@
+
+<table class="table table-striped" id="database_table" , width="100%">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Column Count</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% set tables = databases[database] %}
+    {% for table in tables %}
+    <tr>
+      <td><a href="{{url_for('database_viewer.view', database=database, table=table.name)}}">{{ table.name }}</a></td>
+      <td>{{ len(table._columns) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

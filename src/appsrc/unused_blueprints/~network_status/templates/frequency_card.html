@@ -1,0 +1,24 @@
+<div class="card m-4 mt-2">
+    <div class="card-header bg-dark p-0">
+        <button class="btn btn-link text-light">
+            <b class="mb-0">Background Task Settings</b>
+        </button>
+    </div>
+    <div class="card-body">
+        <form method="POST" class="mb-0 mt-0" action="{{url_for('network.settings')}}">
+            {{ form.csrf_token }}
+            <div class="form-group">
+                <div class="form-check">
+                    {{ form.enable_scan(class="form-check-input") }}
+                    {{ form.enable_scan.label(class="form-check-label fw-bold") }}
+                </div>
+                <div class="form-group mt-2">
+                    {{ form.update_frequency.label(class="control-label fw-bold") }}
+                    {{ form.update_frequency(class="form-control") }}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary d-block w-100 mt-2">Save Settings</button>
+        </form>
+    </div>
+</div>
+<hr>
