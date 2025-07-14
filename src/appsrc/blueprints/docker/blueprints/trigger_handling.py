@@ -24,8 +24,40 @@ from ..models import (
     ACTION_ENUM,
     STATUS_ENUM
 )
-
 os.makedirs("/cetadash-compose", exist_ok=True)
+
+def format_environment_string(env_dict: dict) -> str:
+    """Convert environment dictionary back to string format"""
+    return '\n'.join(f"{key}={value}" for key, value in env_dict.items())
+
+
+def parse_environment_variables(env_string: str) -> dict:
+    """Parse environment variables from a string into a dictionary"""
+    if not env_string:
+        return {}
+    env_vars = {}
+    for line in env_string.strip().split('\n'):
+        line = line.strip()
+        if line and '=' in line and not line.startswith('#'):
+            key, value = line.split('=', 1)
+            env_vars[key.strip()] = value.strip()
+    return env_vars
+
+
+def build_layered_environment(trigger, workflow, task):
+    """Build environment variables with proper layering (trigger/schedule > workflow > task)"""
+    layered_env = parse_environment_variables(getattr(task, 'environment', '') or '')
+    
+    if workflow.environment and workflow.environment.strip():
+        workflow_env = parse_environment_variables(workflow.environment)
+        layered_env.update(workflow_env)
+    
+    if trigger.environment and trigger.environment.strip():
+        trigger_env = parse_environment_variables(trigger.environment)
+        layered_env.update(trigger_env)
+    
+    return layered_env
+
 
 class TemplateRenderer:
     def __init__(self, template_str: str, defaults: dict = None):
@@ -186,7 +218,16 @@ def handle_trigger(user_id, trigger, request_headers, workflow, tasks, result_qu
             success = True
             message = ""
             try:
-                handle_task(trigger, trigger_variables, task, session_id, result_queue, task_log, cleanup=cleanup)
+                handle_task(
+                    trigger,
+                    trigger_variables,
+                    workflow,
+                    task,
+                    session_id,
+                    result_queue,
+                    task_log,
+                    cleanup=cleanup
+                )
                 task_log.status = STATUS_ENUM.SUCCESS
             except Exception as e:
                 task_log.status = STATUS_ENUM.FAILURE
@@ -283,7 +324,16 @@ def up_compose(session, path, result_queue, task_log, cleanup=True):
             c.remove(force=True)
     
 
-def handle_task(trigger, trigger_variables, task, session, result_queue, task_log, cleanup=True):
+def handle_task(
+    trigger,
+    trigger_variables,
+    workflow,
+    task,
+    session,
+    result_queue,
+    task_log,
+    cleanup=True
+):
     def write_log(msg):
         with app.app_context():
             db.session.merge(task_log)
@@ -294,6 +344,13 @@ def handle_task(trigger, trigger_variables, task, session, result_queue, task_lo
     template = task.template
     variables_map = trigger_variables.copy()
     variables_map.update({"session_id": session})
+    write_log("🖥️🌐 Building layered environment (trigger > workflow > task)")
+
+    layered_env = build_layered_environment(trigger, workflow, task)
+    layered_env_string = format_environment_string(layered_env)
+    write_log(f"🖥️📊 Environment layers applied: {len(layered_env)} variables total")
+    if layered_env:
+        write_log(f"🖥️🔧 Environment variables: {', '.join(layered_env.keys())}")
 
     write_log("🖥️✏️ Rendering Template")
     renderer = TemplateRenderer(template, variables_map)
@@ -311,9 +368,15 @@ def handle_task(trigger, trigger_variables, task, session, result_queue, task_lo
     write_log("🖥️💾 Writing compose file...")
     with open(compose_location, "w+") as f:
         yaml.dump(loaded_compose, f, default_flow_style=False, sort_keys=False)
-    write_log("🖥️💾 Writing env file...")
+    write_log("🖥️💾 Writing layered env file...")
     env_location = f"/cetadash-compose/{session}/.env"
     with open(env_location, "w+") as f:
-        f.write(env)
+        f.write(layered_env_string)
     write_log("🖥️⬆️ Starting containers from compose file...")
-    up_compose(session, compose_location, result_queue, task_log, cleanup=cleanup)
+    up_compose(
+        session,
+        compose_location,
+        result_queue,
+        task_log,
+        cleanup=cleanup
+    )

@@ -61,7 +61,7 @@ def index():
             "[ID] Name",
             "Created",
             "Creator",
-            "Edited",
+            "Updated",
             "Editor",
             "Actions", 
         ],
@@ -223,7 +223,7 @@ def edit(trigger_id):
             message = changes
         )
         db.session.commit()
-        flash('Scheduled Trigger edited successfully!', 'success')
+        flash('Scheduled Trigger updated successfully!', 'success')
         return redirect(url_for('docker.scheduler.view', trigger_id=trigger_id))
 
     before.pop("last_editor_id")

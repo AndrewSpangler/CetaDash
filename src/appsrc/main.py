@@ -115,13 +115,10 @@ app.source_dir = SOURCE_DIR
 app.config.from_pyfile(os.path.join(os.getcwd(), "config.py"))
 print(f"Welcome to {app.config['APPLICATION_NAME']}")
 print(f"{app.config['LOADING_SPLASH']}")
-### Add markdown rendering in templates
-Markdown(app)
-
 
 ### Add WTFScript to jinja templating
 wtf = WTFHtmlFlask(app, {
-    "url_for" : url_for,
+    "url_for" : url_for
 })
 macros_dir = os.path.join(os.path.dirname(__file__), "modules/WTFScript/macros/html/")
 # Load wtf modules
@@ -137,6 +134,11 @@ for d in [
 wtf.load_macros_dir(os.path.join(os.path.dirname(__file__), "templates/wtf"))
 app.wtf = wtf
 app.local_tz = app.wtf.get_tz_from_localization(timezone(app.config["TIMEZONE"]))
+
+### Add markdown rendering in templates
+Markdown(app)
+Markdown(wtf)
+
 ### Load plugins and config
 for k in (
     # "SQLALCHEMY_BINDS",
@@ -148,7 +150,6 @@ for k in (
         app.config[k]={}
 
 plugin_config = load_plugin_config(os.path.join(SOURCE_DIR, "blueprints"))
-
 
 app.recursive_update = recursive_update
 
@@ -183,7 +184,7 @@ def with_app():
 
 app.with_app = with_app
 
-def wait_for_db(uri, timeout=60, interval=2):
+def wait_for_db(uri, timeout=60, interval=0.5):
     engine = create_engine(uri)
     start_time = time.time()
     
@@ -207,9 +208,16 @@ wait_for_db(app.config["SQLALCHEMY_BINDS"]["cetadash_db"])
 app.db = db = SQLAlchemy(app)
 # Namespace for blueprints to register models and objects
 app.models = ImmutableDict() 
+# Special-case binding to add db models to wtfscript namespace
+wtf._bind("models", app.models)
 # Init base user / secretkey tables 
 # Creates admin and system users
-from .models import init_db, PERMISSION_ENUM, User, make_changelog
+# Needs to be imported after db init
+from .models import (
+    PERMISSION_ENUM,
+    User,
+    init_db
+)
 init_db(app)
 
 ### Login

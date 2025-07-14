@@ -25,7 +25,16 @@
         available_tasks,
         label="Task Order"
       )
-  ) | jacc(bs.col, classes="mt-3")
+  ) | jacc(bs.col, classes="mt-3"),
+  (
+    form.environment
+      | cm.env_field
+    ~ (
+      "Variables defined here may be overridden "
+      "by Trigger / Schedule / Listener "
+      "environments and will override task environments."
+    ) | cd.note
+  ) | bs.col
   
 ) | jacc(bs.row, classes="mb-0")
 }}

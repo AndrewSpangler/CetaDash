@@ -23,28 +23,43 @@
 {% autoescape false %}
 
 {{
-
   (
     (
       "Template"
         | b
         | bs.card_header("bg-dark text-white")
-      ~ (task.template or "")
-        | cm.yaml_viewer(id="template")
+      ~ (
+        (task.template or "")
+          | cm.yaml_viewer(id="template")
+        ~ (
+          "Docker Compose template. Variables from Triggers "
+          " / Schedulers / Listeners may be used in the template "
+          "with {{trigger_variable}}, environment variables "
+          "can be used with ${env_variable}. "
+        ) | div("text-secondary fst-italic px-2 mx-2 py-2 mx-2")
+      ) | bs.card_body("px-0 py-0")
     ),
     (
       "Environment"
         | b
         | bs.card_header("bg-dark text-white")
-      ~ (task.environment or "")
-        | cm.env_viewer(id="environment")
+      ~ (
+        (task.environment or "")
+          | cm.env_viewer(id="environment")
+        ~ (
+          "Environment variables defined here will "
+          "be applied to to the Task. "
+          "Variables defined here may be overridden by variables "
+          "set in Triggers, Schedules, or Listeners."
+        ) | div("text-secondary fst-italic px-2 mx-2 py-2 mx-2")
+      ) | bs.card_body("px-0 py-0")
     )
   ) | acc(bs.card, classes="px-0")
-    | jacc(bs.col_md_6, classes="col-sm-12 px-0")
-    | bs.row
-    | bs.card_body("mt-0 pt-1")
-    | cd.section_card("config", "Configuration Files")
-
+    | jacc(bs.col_md_6, classes="col-sm-12 px-0 mb-2 pb-0")
+    | bs.row("justify-content-around")
+    | bs.card_body("mt-0 pt-1 pb-0")
+    | cd.section_card("task-configuration", "Configuration Files")
+  
   ~ task_workflow_association_table(task)
     | cd.section_card("task-workflows", "Associated Workflows")
 

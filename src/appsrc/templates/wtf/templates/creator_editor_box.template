@@ -3,6 +3,6 @@
   "Creator" : obj.creator.name,
   "Created At" : obj.created_at_pretty,
   "Last Editor": obj.last_editor.name if obj.last_editor else 'None',
-  "Last Edited At": obj.edited_at_pretty if obj.edited_at else "Never"
+  "Updated At": obj.edited_at_pretty if obj.edited_at else "Never"
   }) | safe 
 }}

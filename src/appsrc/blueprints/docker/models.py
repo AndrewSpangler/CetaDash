@@ -3,6 +3,7 @@ import datetime
 import logging
 from flask_login import UserMixin, current_user
 from sqlalchemy import func as sqlfunc
+from sqlalchemy.orm import backref
 from sqlalchemy.ext.declarative import declared_attr
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.datastructures import ImmutableDict
@@ -83,7 +84,11 @@ class WorkflowTaskEditLog(BaseEditLog):
     __tablename__ = "WorkflowTaskEditLog"
     __bind_key__ = "cetadash_db"
     task_id = db.Column(db.Integer, db.ForeignKey('WorkflowTask.id'), nullable=False)
-    task = db.relationship("WorkflowTask", foreign_keys=[task_id], backref="edit_logs")
+    task = db.relationship(
+        "WorkflowTask",
+        foreign_keys=[task_id],
+        backref=backref("edit_logs", order_by="WorkflowTaskEditLog.id.desc()")
+)
 
 class WorkflowTaskRunLog(BaseActionLog):
     __tablename__ = "WorkflowTaskRunLog"
@@ -91,7 +96,11 @@ class WorkflowTaskRunLog(BaseActionLog):
     task_id = db.Column(db.Integer, db.ForeignKey('WorkflowTask.id'), nullable=False)
     task = db.relationship("WorkflowTask", foreign_keys=[task_id], backref="run_logs")
     workflow_log_id = db.Column(db.Integer, db.ForeignKey('WorkflowRunLog.id'), nullable=False)
-    workflow_log = db.relationship("WorkflowRunLog", foreign_keys=[workflow_log_id], backref="task_logs")
+    workflow_log = db.relationship(
+        "WorkflowRunLog",
+        foreign_keys=[workflow_log_id],
+        backref=backref("task_logs", order_by="WorkflowTaskRunLog.id.desc()")
+    )
 
 class WorkflowTaskScheduledRunLog(BaseActionLog):
     __tablename__ = "WorkflowTaskScheduledRunLog"
@@ -99,7 +108,11 @@ class WorkflowTaskScheduledRunLog(BaseActionLog):
     task_id = db.Column(db.Integer, db.ForeignKey('WorkflowTask.id'), nullable=False)
     task = db.relationship("WorkflowTask", foreign_keys=[task_id], backref="scheduled_run_logs")
     workflow_log_id = db.Column(db.Integer, db.ForeignKey('WorkflowScheduledRunLog.id'), nullable=False)
-    workflow_log = db.relationship("WorkflowScheduledRunLog", foreign_keys=[workflow_log_id], backref="scheduled_task_logs")
+    workflow_log = db.relationship(
+        "WorkflowScheduledRunLog",
+        foreign_keys=[workflow_log_id],
+        backref=backref("scheduled_task_logs", order_by="WorkflowTaskScheduledRunLog.id.desc()")
+    )
 
 ####################
 # Workflows
@@ -185,14 +198,23 @@ class WorkflowEditLog(BaseEditLog):
     __tablename__ = "WorkflowEditLog"
     __bind_key__ = "cetadash_db"
     workflow_id = db.Column(db.Integer, db.ForeignKey('Workflow.id'), nullable=False)
-    workflow = db.relationship("Workflow", foreign_keys=[workflow_id], backref="edit_logs")
+    workflow = db.relationship(
+        "Workflow",
+        foreign_keys=[workflow_id],
+        backref=backref("edit_logs", order_by="WorkflowEditLog.id.desc()")
+    )
 
 
 class WorkflowRunLog(BaseActionLog):
     __tablename__ = "WorkflowRunLog"
     __bind_key__ = "cetadash_db"
     workflow_id = db.Column(db.Integer, db.ForeignKey('Workflow.id'), nullable=False)
-    workflow = db.relationship("Workflow", foreign_keys=[workflow_id], backref="run_logs")
+    workflow = db.relationship(
+        "Workflow",
+        foreign_keys=[workflow_id],
+        backref=backref("run_logs", order_by="WorkflowRunLog.id.desc()")
+    )
+
     trigger_log_id = db.Column(db.Integer, db.ForeignKey('WorkflowTriggerRunLog.id'), nullable=False)
     trigger_log = db.relationship("WorkflowTriggerRunLog", foreign_keys=[trigger_log_id])
 
@@ -202,7 +224,11 @@ class WorkflowScheduledRunLog(BaseActionLog):
     __tablename__ = "WorkflowScheduledRunLog"
     __bind_key__ = "cetadash_db"
     workflow_id = db.Column(db.Integer, db.ForeignKey('Workflow.id'), nullable=False)
-    workflow = db.relationship("Workflow", foreign_keys=[workflow_id], backref="schedule_run_logs")
+    workflow = db.relationship(
+        "Workflow",
+        foreign_keys=[workflow_id],
+        backref=backref("schedule_run_logs", order_by="WorkflowScheduledRunLog.id.desc()")
+    )
     schedule_trigger_log_id = db.Column(db.Integer, db.ForeignKey('ScheduleTriggerRunLog.id'), nullable=False)
     schedule_trigger_log = db.relationship("ScheduleTriggerRunLog", foreign_keys=[schedule_trigger_log_id])
 
@@ -215,7 +241,14 @@ class WorkflowTaskAssociation(db.Model):
     task_id = db.Column(db.Integer, db.ForeignKey("WorkflowTask.id"), nullable=False)
     priority = db.Column(db.Integer, nullable=False, default=0)
 
-    workflow = db.relationship("Workflow", backref=db.backref("task_associations", lazy="dynamic", cascade="all, delete-orphan"))
+    workflow = db.relationship(
+        "Workflow",
+        backref=db.backref(
+            "task_associations",
+            lazy="dynamic",
+            cascade="all,delete-orphan"
+        )
+    )
     task = db.relationship("WorkflowTask", backref="workflow_associations")
 
 
@@ -242,14 +275,22 @@ class WorkflowTriggerEditLog(BaseEditLog):
     __tablename__ = "WorkflowTriggerEditLog"
     __bind_key__ = "cetadash_db"
     workflow_trigger_id = db.Column(db.Integer, db.ForeignKey('WorkflowTrigger.id'), nullable=False)
-    workflow_trigger = db.relationship("WorkflowTrigger", foreign_keys=[workflow_trigger_id], backref="edit_logs")
+    workflow_trigger = db.relationship(
+        "WorkflowTrigger",
+        foreign_keys=[workflow_trigger_id],
+        backref=backref("edit_logs", order_by="WorkflowTriggerEditLog.id.desc()")
+    )
 
 
 class WorkflowTriggerRunLog(BaseActionLog):
     __tablename__ = "WorkflowTriggerRunLog"
     __bind_key__ = "cetadash_db"
     workflow_trigger_id = db.Column(db.Integer, db.ForeignKey('WorkflowTrigger.id'), nullable=False)
-    workflow_trigger = db.relationship("WorkflowTrigger", foreign_keys=[workflow_trigger_id], backref="run_logs")
+    workflow_trigger = db.relationship(
+        "WorkflowTrigger",
+        foreign_keys=[workflow_trigger_id],
+        backref=backref("run_logs", order_by="WorkflowTriggerRunLog.id.desc()")
+    )
 
     @property
     def workflow_log(self):
@@ -332,14 +373,21 @@ class ScheduleTriggerEditLog(BaseEditLog):
     __tablename__ = "ScheduleTriggerEditLog"
     __bind_key__ = "cetadash_db"
     schedule_trigger_id = db.Column(db.Integer, db.ForeignKey('ScheduleTrigger.id'), nullable=False)
-    schedule_trigger = db.relationship("ScheduleTrigger", foreign_keys=[schedule_trigger_id], backref="edit_logs")
-
+    schedule_trigger = db.relationship(
+        "ScheduleTrigger",
+        foreign_keys=[schedule_trigger_id],
+        backref=backref("edit_logs", order_by="ScheduleTriggerEditLog.id.desc()")
+    )
 
 class ScheduleTriggerRunLog(BaseActionLog):
     __tablename__ = "ScheduleTriggerRunLog"
     __bind_key__ = "cetadash_db"
     schedule_trigger_id = db.Column(db.Integer, db.ForeignKey('ScheduleTrigger.id'), nullable=False)
-    schedule_trigger = db.relationship("ScheduleTrigger", foreign_keys=[schedule_trigger_id], backref="run_logs")
+    schedule_trigger = db.relationship(
+        "ScheduleTrigger",
+        foreign_keys=[schedule_trigger_id],
+        backref=backref("run_logs", order_by="ScheduleTriggerRunLog.id.desc()")
+    )
 
     @property
     def workflow_log(self):
@@ -499,7 +547,7 @@ def init_db(app):
                     description=task_data["description"],
                     details=task_data["details"],
                     creator_id=1,
-                    last_editor_id=1,
+                    last_editor_id=1
                 )
                 db.session.add(task)
                 tasks.append(task)
@@ -511,7 +559,7 @@ def init_db(app):
                 description=wf_data["description"],
                 details=wf_data["details"],
                 creator_id=1,
-                last_editor_id=1,
+                last_editor_id=1
             )
             db.session.add(workflow)
             db.session.commit()

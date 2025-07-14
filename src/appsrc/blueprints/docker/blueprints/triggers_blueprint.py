@@ -58,7 +58,7 @@ def index():
             "Endpoint",
             "Created",
             "Creator",
-            "Edited",
+            "Updated",
             "Editor",
             "Actions", 
         ],
@@ -179,6 +179,7 @@ def view(trigger_id):
     trigger = WorkflowTrigger.query.get_or_404(trigger_id)    
     return render_template('trigger/view.html', trigger=trigger)
 
+
 @blueprint.route('/trigger/<trigger_id>/edits/<log_id>', methods=['GET','POST'])
 @app.permission_required(app.models.core.PERMISSION_ENUM.ADMIN)
 def edits(trigger_id, log_id):
@@ -193,6 +194,7 @@ def edits(trigger_id, log_id):
         edit_log=edit_log
     )
 
+
 @blueprint.route('/trigger/<trigger_id>/logs/<log_id>', methods=['GET','POST'])
 @app.permission_required(app.models.core.PERMISSION_ENUM.ADMIN)
 def logs(trigger_id, log_id):
@@ -201,6 +203,7 @@ def logs(trigger_id, log_id):
     if not trigger.id == run_log.workflow_trigger.id:
         raise ValueError("Trigger and edit log do not match")
     return render_template('pages/log_stack_page.html', log=run_log)
+
 
 @blueprint.route('/trigger/<trigger_id>/delete', methods=['POST'])
 @app.permission_required(app.models.core.PERMISSION_ENUM.ADMIN)

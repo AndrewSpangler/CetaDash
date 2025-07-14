@@ -29,6 +29,7 @@ class EditWorkflowForm(FlaskForm):
     )
     details = TextAreaField('Details (MD)')
     description = StringField('Description ', validators=[Length(min=0, max=256)])
+    environment = TextAreaField('Environment Variables (ENV)')
     submit = SubmitField('Save Workflow')
 
 

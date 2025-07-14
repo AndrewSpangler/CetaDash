@@ -71,7 +71,7 @@ def index():
             "Created By",
             "Created At",
             "Last Edited By",
-            "Last Edited At",
+            "Updated At",
         ],
         rows=[
             (

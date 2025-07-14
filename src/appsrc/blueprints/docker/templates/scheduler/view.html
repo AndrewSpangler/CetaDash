@@ -77,23 +77,35 @@
     | div("d-flex justify-content-between align-items-start")
     | div("schedule-info")
     | bs.card_body(classes="mb-0 pb-1 pt-2 px-0")
-
   ~(
     (
       "Jinja Variables"
         | b
         | bs.card_header("bg-dark text-white")
-      ~ (trigger.headers or "")
-        | cm.yaml_viewer(id="headers")
-        | bs.card_body("px-0 py-0")
+      ~ (
+        (trigger.headers or "")
+          | cm.yaml_viewer(id="headers")
+        ~ (
+          "Defines internal variables to be used by Task templating. "
+          "These variables are not provided to the environment file. "
+          "Use them in your templates with {{variable}}. "
+        ) | div("text-secondary fst-italic px-2 mx-2 py-2 mx-2")
+      ) | bs.card_body("px-0 py-0")
     ),
     (
       "Environment"
         | b
         | bs.card_header("bg-dark text-white")
-      ~ (trigger.environment or "")
-        | cm.env_viewer(id="environment")
-        | bs.card_body("px-0 py-0")
+      ~ (
+        (trigger.environment or "")
+          | cm.env_viewer(id="environment")
+        ~ (
+          "Environment variables defined here will "
+          "be applied to all tasks run as part of the workflow. "
+          "Variables defined here may override those defined "
+          "within Workflows and Tasks."
+        ) | div("text-secondary fst-italic px-2 mx-2 py-2 mx-2")
+      ) | bs.card_body("px-0 py-0")
     )
   ) | acc(bs.card, classes="px-0")
     | jacc(bs.col_md_6, classes="col-sm-12 px-0")

@@ -24,14 +24,34 @@
 {% block view_content %}
 {% autoescape false %}
 {{
-workflow_task_table(workflow)
-  | cd.section_card("workflow-tasks", "Workflow Tasks")
+(
+  (
+    "Environment"
+      | b
+      | bs.card_header("bg-dark text-white")
+    ~ (
+      (workflow.environment or "")
+        | cm.env_viewer(id="environment")
+      ~ (
+        "Workflow environment variables defined here will "
+        "be applied to tasks run as part of the workflow. "
+        "Variables defined here may override those defined "
+        "within individual Tasks. However, environment "
+        "variables set in Triggers, Schedules, or Listeners "
+        "will take precedence."
+      ) | div("text-secondary fst-italic px-2 mx-2 py-2 mx-2")
+    ) |  bs.card_body("px-0 py-0")
+  ) | bs.card
+) | cd.section_card("workflow-configuration", "Configuration")
+
+~ workflow_task_table(workflow)
+  | cd.section_card("workflow-tasks", "Tasks")
 ~ workflow_triggers_table(workflow)
-  | cd.section_card("workflow-triggers", "Workflow Triggers")
+  | cd.section_card("workflow-triggers", "Triggers")
 ~ workflow_schedules_table(workflow)
-  | cd.section_card("workflow-schedules", "Workflow Schedules")
+  | cd.section_card("workflow-schedules", "Schedules")
 ~ workflow_log_table(workflow)
-  | cd.section_card("workflow-log", "Workflow Run Logs")
+  | cd.section_card("workflow-log", "Run Logs")
 ~ workflow_scheduled_log_table(workflow)
   | cd.section_card("workflow-schedule-log", "Scheduled Run Logs")
 }}

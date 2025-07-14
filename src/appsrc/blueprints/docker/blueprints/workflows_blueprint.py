@@ -50,7 +50,7 @@ def index():
             "[ID] Name",
             "Created",
             "Creator",
-            "Edited",
+            "Updated",
             "Editor",
             "Actions", 
         ],
@@ -90,7 +90,7 @@ def create():
             last_editor_id=current_user.id,
             description=form.description.data,
             details=form.details.data,
-
+            environment=form.environment.data,
         )
         db.session.add(workflow)
         db.session.commit()
@@ -99,6 +99,7 @@ def create():
             workflow.add_task(WorkflowTask.query.get(_id))
         workflow.reorder_tasks([int(_id) for _id in form.tasks.data])
         workflow.log_edit(current_user.id, ACTION_ENUM.CREATE)
+
         db.session.commit()
         flash('Docker Workflow created successfully!', 'success')
         return redirect(url_for('docker.workflows.view', workflow_id=workflow.id))
@@ -129,7 +130,8 @@ def edit(workflow_id):
         "details" : workflow.details,
         "last_editor_id" : workflow.last_editor_id,
         "edited_at" : workflow.edited_at,
-        'tasks':  used_task_ids
+        'tasks':  used_task_ids,
+        "environment": workflow.environment
     }
 
     if request.method == "POST" and form.validate_on_submit():
@@ -148,7 +150,8 @@ def edit(workflow_id):
             "edited_at" : datetime.datetime.utcnow(),
             "details" : form.details.data,
             "description": form.description.data,
-            "tasks" : workflow.prioritized_task_ids
+            "tasks" : workflow.prioritized_task_ids,
+            "environment": form.environment.data
         }
         for k, v in after.items():
             if k == "tasks":

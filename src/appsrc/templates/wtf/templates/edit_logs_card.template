@@ -18,7 +18,7 @@
         log_url_callback(log),
         log.timestamp_pretty,
         log.user.name,
-        app.models.docker.ACTION_ENUM._NAMES[log.action]
+        models.docker.ACTION_ENUM._NAMES[log.action]
       ) | jacc(td)
         | tr
         | safe

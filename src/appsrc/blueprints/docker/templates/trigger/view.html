@@ -25,22 +25,36 @@
       "Proxy Headers Translation"
         | b
         | bs.card_header("bg-dark text-white")
-      ~ (trigger.headers or "")
-        | cm.yaml_viewer(id="headers")
-        | bs.card_body("px-0 py-0")
+      ~ (
+        (trigger.headers or "")
+          | cm.yaml_viewer(id="headers")
+        ~ (
+          "Defines the translation from external proxy headers "
+          "to internal variables to be used by Task templating. "
+          "These variables are not provided to the environment file. "
+          "Use them in your templates with {{variable}}. "
+        ) | div("text-secondary fst-italic px-2 mx-2 py-2 mx-2")
+      ) | bs.card_body("px-0 py-0")
     ),
     (
       "Environment"
         | b
         | bs.card_header("bg-dark text-white")
-      ~ (trigger.environment or "")
-        | cm.env_viewer(id="environment")
-        | bs.card_body("px-0 py-0")
+      ~ (
+        (trigger.environment or "")
+          | cm.env_viewer(id="environment")
+        ~ (
+          "Environment variables defined here will "
+          "be applied to all tasks run as part of the workflow. "
+          "Variables defined here may override those defined "
+          "within Workflows and Tasks."
+        ) | div("text-secondary fst-italic px-2 mx-2 py-2 mx-2")
+      ) | bs.card_body("px-0 py-0")
     )
   ) | acc(bs.card, classes="px-0")
-    | jacc(bs.col_md_6, classes="col-sm-12 px-0")
-    | bs.row
-    | bs.card_body("mt-0 pt-1")
+    | jacc(bs.col_md_6, classes="col-sm-12 px-0 mb-2 pb-0")
+    | bs.row("justify-content-around")
+    | bs.card_body("mt-0 pt-1 pb-0")
     | cd.section_card("config", "Configuration")
   ~ trigger_log_table(trigger)
     | cd.section_card("logs", "Run Logs")

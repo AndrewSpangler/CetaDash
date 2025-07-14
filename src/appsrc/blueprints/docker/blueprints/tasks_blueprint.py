@@ -50,7 +50,7 @@ def index():
             "[ID] Name",
             "Created",
             "Creator",
-            "Edited",
+            "Updated",
             "Editor",
             "Actions", 
         ],
@@ -135,7 +135,7 @@ def edit(task_id):
             message = changes
         )
         db.session.commit()
-        flash('Workflow Task edited successfully!', 'success')
+        flash('Workflow Task updated successfully!', 'success')
         return redirect(url_for('docker.tasks.view', task_id=task_id))
     
     before.pop("last_editor_id")

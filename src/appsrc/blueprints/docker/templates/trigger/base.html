@@ -24,10 +24,24 @@
   ) | jacc(bs.col, classes="mb-0"),
 
   (
-    form.headers
-      | cm.yaml_field,
-    form.environment
-      | cm.env_field
+    (
+      form.headers
+        | cm.yaml_field
+      ~ (
+        "Defines the translation from external proxy headers "
+        "to internal variables to be used by Task templating. "
+        "These variables are not provided to the environment file. "
+        "Use them in your templates with {{variable}}. "
+      ) | cd.note
+    ),
+    (
+      form.environment
+        | cm.env_field
+      ~ (
+        "Variables defined here will override "
+        "Workflow and Task environments."
+      ) | cd.note
+    )
   ) | jacc(bs.col, classes="mb-0")
 
 ) | jacc(bs.row, classes="mb-3 mt-0")

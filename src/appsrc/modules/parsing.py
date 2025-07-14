@@ -86,6 +86,5 @@ def make_table_page(
         "pages/table_page.html",
         name = name,
         custom_script = custom_script,
-        for_page = True,
         **kw
     )

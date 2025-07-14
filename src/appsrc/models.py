@@ -185,7 +185,7 @@ class BaseLog(db.Model):
         return app.wtf.localize(self.timestamp)
     @property
     def timestamp_pretty(self):
-        return pretty_date(self.timestamp_local)
+        return app.wtf.pretty_date(self.timestamp_local)
 
 
 class BaseEditLog(BaseLog):
