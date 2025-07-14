@@ -1,0 +1,7 @@
+{{
+  (
+    section_start(id=id, label=label)
+    ~ content
+    ~ section_end()
+  ) | safe
+}}

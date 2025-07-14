@@ -3,40 +3,34 @@
 {% block form_content %}
 {% autoescape false %}
 {{ 
-
 (
-  form.name
-    | string_field("Name Cannot Be Blank")
-    | col
-  ~ form.workflow_id
-    | dropdown_field
-    | col
-) | row("mb-0")
 
-~ (
+  (
+    form.name
+      | wtff.string_field(placeholder="Name Cannot Be Blank"),
+    form.workflow_id
+      | wtff.dropdown_field
+  ) | jacc(bs.col, classes="mb-0"),
+  
   form.endpoint
-    | string_field("Trigger Endpoint (/docker/triggers/{endpoint})")
-    | col("mb-0")
-) | row("mb-0")
+    | wtff.string_field(placeholder="Trigger Endpoint (/docker/triggers/{endpoint})")
+    | bs.col("mb-0"),
 
-~ (
-  form.details 
-    | md_field
-    | col("mb-0")
-  ~ form.description
-    | textarea_field
-    | col("mb-0")
-) | row("mb-0 mt-3")
+  (
+    form.details 
+      | mde.md_field,
+    form.description
+      | wtff.textarea_field
+  ) | jacc(bs.col, classes="mb-0"),
 
-~ (
-  form.headers
-    | yaml_field
-    | col("mb-0")
-  ~ form.environment
-    | env_field
-    | col("mb-0")
-) | row("mb-0")
+  (
+    form.headers
+      | cm.yaml_field,
+    form.environment
+      | cm.env_field
+  ) | jacc(bs.col, classes="mb-0")
 
+) | jacc(bs.row, classes="mb-3 mt-0")
 }}
 {% endautoescape %}
 {% endblock %}

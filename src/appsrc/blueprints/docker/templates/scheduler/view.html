@@ -57,9 +57,9 @@
 
 {% macro make_enabled_badge(trigger) %}
   {% if trigger.enabled %}
-  {{ "Enabled" | badge("success") | safe }}
+  {{ "Enabled" | bs.badge(classes="bg-success") | safe }}
   {% else %}
-  {{ "Disabled" | badge("danger") | safe }}
+  {{ "Disabled" | bs.badge(classes="danger") | safe }}
   {% endif %}
 {% endmacro %}
 
@@ -69,24 +69,41 @@
 {{
 (
   (
-    make_trigger_card(trigger) | div("flex-grow-1")
-    ~ make_enabled_badge(trigger) | div("text-end")
+    make_trigger_card(trigger)
+      | div("flex-grow-1")
+    ~ make_enabled_badge(trigger)
+      | div("text-end")
   )
     | div("d-flex justify-content-between align-items-start")
     | div("schedule-info")
-    | div("card-body mb-0 pb-1 pt-2")
+    | bs.card_body(classes="mb-0 pb-1 pt-2 px-0")
 
   ~(
-    (trigger.headers or "")
-      | yaml_viewer("headers", "Jinja Variables")
-    ~ (trigger.environment or "")
-      | env_viewer("environment", "Environment")
-  ) | row
-    | div("card-body mt-0 pt-1")
-) | section_card("config", "Configuration")
+    (
+      "Jinja Variables"
+        | b
+        | bs.card_header("bg-dark text-white")
+      ~ (trigger.headers or "")
+        | cm.yaml_viewer(id="headers")
+        | bs.card_body("px-0 py-0")
+    ),
+    (
+      "Environment"
+        | b
+        | bs.card_header("bg-dark text-white")
+      ~ (trigger.environment or "")
+        | cm.env_viewer(id="environment")
+        | bs.card_body("px-0 py-0")
+    )
+  ) | acc(bs.card, classes="px-0")
+    | jacc(bs.col_md_6, classes="col-sm-12 px-0")
+    | bs.row
+    | bs.card_body("mt-0 pt-1")
+
+) | cd.section_card("config", "Configuration")
 
 ~ trigger_log_table(trigger)
-  | section_card("trigger-log", "Run Logs")
+  | cd.section_card("trigger-log", "Run Logs")
 }}
 {% endautoescape %}
 {% endblock %}

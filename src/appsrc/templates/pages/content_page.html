@@ -5,13 +5,13 @@
 {% block content %}
 {% autoescape false %}
 {{ 
-  container_start() 
-  ~ container_header(title, header_elements=header_elements)
+  cd.container_start() 
+  ~ cd.container_header(title, header_elements=header_elements)
   | safe
 }}
 <div class="card-body">
   {% block card_content %}{% endblock %}
 </div>
-{{ container_end() }}
+{{ cd.container_end() }}
 {% endautoescape %}
 {% endblock %}

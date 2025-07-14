@@ -1,0 +1,7 @@
+{{
+  items
+    | jacc(th)
+    | tr
+    | thead(id=id, classes=classes)
+    | safe
+}}

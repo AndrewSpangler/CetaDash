@@ -16,8 +16,8 @@
   ~ '<a href="' ~ url_object ~ '">' ~ object.id ~ '</a>'
 ) %}
 
-{{ container_start() }}
-{{ container_header(page_title, 'database_viewer.view', 'Back to databases') }}
+{{ cd.container_start() }}
+{{ cd.container_header(page_title, 'database_viewer.view', 'Back to databases') }}
 <div class="card-body">
   <table class="table table-striped" id="databases_table" width="100%">
     <thead>
@@ -38,7 +38,7 @@
     </tbody>
   </table>
 </div>
-{{ container_end() }}
+{{ cd.container_end() }}
 
 {% endautoescape %}
 {% endblock %}

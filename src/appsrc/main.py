@@ -42,7 +42,7 @@ from .modules.parsing import (
 )
 from .modules.task_manager import BackgroundTaskManager
 from .modules.plugin import load_plugin_config, get_blueprints
-from .modules.wtf_script import WTFScript
+from .modules.WTFScript import WTFHtmlFlask
 
 SOURCE_DIR = os.path.dirname(__file__)
 BOOTSWATCH_THEMES = ["default"]
@@ -123,15 +123,28 @@ print(f"{app.config['LOADING_SPLASH']}")
 ### Add markdown rendering in templates
 Markdown(app)
 
-### Add WTF Script to jinja templating
-WTFScript(app, {
+
+### Add WTFScript to jinja templating
+wtf = WTFHtmlFlask(app, {
     "url_for" : url_for,
     "format_bytes" : format_bytes,
     "pretty_date": pretty_date,
     "pretty_from_timestamp": pretty_from_timestamp,
     "from_rfc_timestamp": from_rfc_timestamp,
 })
-
+macros_dir = os.path.join(os.path.dirname(__file__), "modules/WTFScript/macros/html/")
+# Load wtf modules
+for d in [
+    "bootstrap",
+    "wtf_fields",
+    "simplemde",
+    "codemirror",
+    "ansi"
+]:
+    wtf.load_macros_dir(os.path.join(macros_dir, d))
+# load custom wtf module for CetaDash
+wtf.load_macros_dir(os.path.join(os.path.dirname(__file__), "templates/wtf"))
+app.wtf = wtf
 ### Load plugins and config
 for k in (
     # "SQLALCHEMY_BINDS",
@@ -329,9 +342,9 @@ def provide_selection() -> dict:
         selected_theme = current_user.selected_theme
 
     return {
+        "app": app,
         "show_tz": True, 
         "nav_enabled": True,
-        "light_background": False,
         "PERMISSION_MAP": app.models.core.PERMISSION_MAP,
         "PERMISSION_ENUM": app.models.core.PERMISSION_ENUM,
         "local_tz": get_tz_from_localization(app.local_tz),

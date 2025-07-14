@@ -56,7 +56,7 @@
       {% set total_routes = tree.values() | map(attribute='__routes__') | select | map('length') | sum %}
       {% set header_items = {"Blueprints": tree|length, "Routes": total_routes} %}
       {{
-        header_value_box({"Blueprints": tree|length, "Routes": total_routes}) | safe
+        cd.header_value_box({"Blueprints": tree|length, "Routes": total_routes}) | safe
       }}
     </div>
 

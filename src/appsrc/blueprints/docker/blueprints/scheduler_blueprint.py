@@ -27,6 +27,7 @@ from ..models import (
     WorkflowTaskAssociation,
     ScheduleTrigger,
     ScheduleTriggerEditLog,
+    ScheduleTriggerRunLog,
     ACTION_ENUM,
     STATUS_ENUM
 )
@@ -214,7 +215,7 @@ def edit(trigger_id):
         }
 
         for k, v in after.items():
-            setattr(workflow, k, v)
+            setattr(trigger, k, v)
         changes = app.models.core.make_changelog(before, after)
         trigger.log_edit(
             current_user.id,
@@ -252,6 +253,16 @@ def edits(trigger_id, log_id):
         'scheduler/changelog.html',
         edit_log=edit_log
     )
+
+
+@blueprint.route('/scheduler/<trigger_id>/logs/<log_id>', methods=['GET','POST'])
+@app.permission_required(app.models.core.PERMISSION_ENUM.ADMIN)
+def logs(trigger_id, log_id):
+    trigger = ScheduleTrigger.query.get_or_404(trigger_id) 
+    run_log = ScheduleTriggerRunLog.query.get_or_404(log_id)
+    if not trigger.id == run_log.schedule_trigger.id:
+        raise ValueError("Trigger and edit log do not match")
+    return render_template('pages/log_stack_page.html', log=run_log)
 
 
 @blueprint.route('/scheduler/<trigger_id>/delete', methods=['POST'])

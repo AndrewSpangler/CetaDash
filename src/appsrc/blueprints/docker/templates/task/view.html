@@ -1,7 +1,8 @@
 {% from "macros/docker.html" import
   task_log_table,
   task_scheduled_log_table,
-  task_edit_log_link
+  task_edit_log_link,
+  task_workflow_association_table
   with context
 %}
 
@@ -22,19 +23,36 @@
 {% autoescape false %}
 
 {{
+
   (
-    (task.template or "")
-      | yaml_viewer("template", "Template")
-    ~ (task.environment or "")
-      | env_viewer("environment", "Environment")
-  ) | row
-    | section_card("config", "Configuration Files")
+    (
+      "Template"
+        | b
+        | bs.card_header("bg-dark text-white")
+      ~ (task.template or "")
+        | cm.yaml_viewer(id="template")
+    ),
+    (
+      "Environment"
+        | b
+        | bs.card_header("bg-dark text-white")
+      ~ (task.environment or "")
+        | cm.env_viewer(id="environment")
+    )
+  ) | acc(bs.card, classes="px-0")
+    | jacc(bs.col_md_6, classes="col-sm-12 px-0")
+    | bs.row
+    | bs.card_body("mt-0 pt-1")
+    | cd.section_card("config", "Configuration Files")
+
+  ~ task_workflow_association_table(task)
+    | cd.section_card("task-workflows", "Associated Workflows")
 
   ~ task_log_table(task)
-    | section_card("logs", "Run Logs")
+    | cd.section_card("logs", "Run Logs")
   
   ~ task_scheduled_log_table(task)
-    | section_card("scheduled-logs", "Scheduled Run Logs")
+    | cd.section_card("scheduled-logs", "Scheduled Run Logs")
 }}
 
 {% endautoescape %}

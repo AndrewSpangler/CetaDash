@@ -217,7 +217,7 @@ class WorkflowTaskAssociation(db.Model):
     priority = db.Column(db.Integer, nullable=False, default=0)
 
     workflow = db.relationship("Workflow", backref=db.backref("task_associations", lazy="dynamic", cascade="all, delete-orphan"))
-    task = db.relationship("WorkflowTask", backref="workflow_association")
+    task = db.relationship("WorkflowTask", backref="workflow_associations")
 
 
 ####################
@@ -287,7 +287,47 @@ class ScheduleTrigger(BaseEditable):
     
     def log_run(self, status: int = STATUS_ENUM.RUNNING, **kw):
         return super().log_run(ScheduleTriggerRunLog, SYSTEM_ID, status=status, schedule_trigger_id=self.id, **kw)
-
+    
+    @property
+    def schedule_string(self) -> str:
+        """Returns a human-readable string representation of the schedule configuration."""
+        if self.job_type == "cron":
+            parts = []
+            
+            if self.day_of_week:
+                if self.day_of_week == "*":
+                    parts.append("every day")
+                else:
+                    days = self.day_of_week.replace(",", ", ")
+                    parts.append(f"on {days}")
+            
+            if self.hour is not None and self.minute is not None:
+                time_str = f"{self.hour:02d}:{self.minute:02d}"
+                parts.append(f"at {time_str}")
+            elif self.hour is not None:
+                parts.append(f"at {self.hour:02d}:00")
+            elif self.minute is not None:
+                parts.append(f"at minute {self.minute}")
+            
+            return " ".join(parts) if parts else "cron schedule"
+        
+        elif self.job_type == "interval":
+            parts = []
+            
+            if self.hours:
+                parts.append(f"{self.hours} hour{'s' if self.hours != 1 else ''}")
+            if self.minutes:
+                parts.append(f"{self.minutes} minute{'s' if self.minutes != 1 else ''}")
+            if self.seconds:
+                parts.append(f"{self.seconds} second{'s' if self.seconds != 1 else ''}")
+            
+            if parts:
+                return f"every {', '.join(parts)}"
+            else:
+                return "interval schedule"
+        
+        return f"{self.job_type} schedule"
+    
 
 class ScheduleTriggerEditLog(BaseEditLog):
     __tablename__ = "ScheduleTriggerEditLog"

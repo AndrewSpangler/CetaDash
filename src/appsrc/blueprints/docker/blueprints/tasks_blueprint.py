@@ -33,7 +33,6 @@ blueprint = Blueprint(
     template_folder=os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates"),
 )
 
-
 @blueprint.route('/')
 @app.permission_required(app.models.core.PERMISSION_ENUM.ADMIN)
 def index():

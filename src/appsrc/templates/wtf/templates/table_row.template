@@ -1,0 +1,6 @@
+{{
+  items
+    | jacc(td)
+    | tr(id=id,classes=classes)
+    | safe
+}}

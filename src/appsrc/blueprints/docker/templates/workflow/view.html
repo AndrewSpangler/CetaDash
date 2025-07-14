@@ -2,6 +2,8 @@
   workflow_task_table,
   workflow_log_table,
   workflow_scheduled_log_table,
+  workflow_triggers_table,
+  workflow_schedules_table,
   workflow_edit_log_link
   with context
 %}
@@ -23,11 +25,15 @@
 {% autoescape false %}
 {{
 workflow_task_table(workflow)
-  | section_card("workflow-tasks", "Workflow Tasks")
+  | cd.section_card("workflow-tasks", "Workflow Tasks")
+~ workflow_triggers_table(workflow)
+  | cd.section_card("workflow-triggers", "Workflow Triggers")
+~ workflow_schedules_table(workflow)
+  | cd.section_card("workflow-schedules", "Workflow Schedules")
 ~ workflow_log_table(workflow)
-  | section_card("workflow-log", "Workflow Run Logs")
+  | cd.section_card("workflow-log", "Workflow Run Logs")
 ~ workflow_scheduled_log_table(workflow)
-  | section_card("workflow-schedule-log", "Scheduled Run Logs")
+  | cd.section_card("workflow-schedule-log", "Scheduled Run Logs")
 }}
 {% endautoescape %}
 {% endblock %}

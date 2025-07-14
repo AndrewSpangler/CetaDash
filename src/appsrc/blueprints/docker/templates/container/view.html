@@ -1,222 +1,236 @@
 {% set title="View Container: " + container.name %}
 {% extends "core.html" %}
 
+{% macro make_mount_item(mount) %}
+{{
+  ( 
+    mount.Source
+      | td("font-monospace fw-normal")
+    ~ mount.Destination
+      | td("font-monospace fw-normal")
+    ~ mount.Mode.upper()
+      | bs.badge(classes='bg-success' if mount.RW else 'bg-warning')
+      | td
+  ) | tr 
+    | safe
+}}
+{% endmacro %}
+
+{% macro make_env_item(items) %}
+{% set key, value = items.split('=', 1) %}
+{{ 
+  (
+    key
+      | strong("text-primary")
+    ~ value
+      | div("font-monospace small text-muted")
+  ) | div
+    | div("d-flex justify-content-between align-items-start")
+    | bs.list_group_item("px-0 py-2")
+    | safe
+}}
+{% endmacro %}
+
+{% macro make_network_item(network) %}
+{% set namework_info = network[1] %}
+{{
+  (
+    network[0]
+      | h6("text-primary")
+    ~ ( 
+      (namework_info.IPAddress or "N/A")
+        | cd.labeled_val("IP Address", vclass="font-monospace"),
+      (namework_info.Gateway or "N/A")
+        | cd.labeled_val("Gateway", vclass="font-monospace"),
+      (namework_info.MacAddress or "N/A")
+        | cd.labeled_val("MAC Address", vclass="font-monospace small"),
+      (namework_info.NetworkID or "N/A")
+        | cd.labeled_val("Network ID", vclass="font-monospace small"),
+    ) | jacc(bs.col_md_6)
+      | bs.row("g-2")
+  ) | div("mb-1")
+    | safe
+}}
+{% endmacro %}
+
+{% macro make_binding_item(binding="", port="") %}
+{% set ip_version = "IPv6" if "::" in binding.HostIp else "IPv4" %}
+{{
+  ( 
+    port.split('/')[0]
+      | td("font-monospace")
+    ~ binding.HostPort
+      | td("font-monospace")
+    ~ port.split('/')[1].upper()
+      | bs.badge(classes="bg-secondary")
+      | td
+    ~ ip_version
+      | td 
+  ) | tr 
+    | safe
+}}
+{% endmacro %}
+
+{% macro make_port_items(items) %}
+{% set port = items[0] %}
+{% set bindings = items[1] %}
+{% if bindings %}
+{{
+  bindings
+    | jacc(make_binding_item, port=port)
+    | safe
+}}
+{% endif %}
+{% endmacro %}
+
 {% block content %}
 {% autoescape false %}
-{{ container_start() }}
-{{ container_header(
-  container.name,
-  "docker.containers.index",
-  "Back to containers",
-  value_boxes = [header_value_box({
-    "Image" : container.image.tags[0],
-    "Created" : pretty_date(from_rfc_timestamp(container_data['Created'])),
-    "Status": container_data['State']['Status'].capitalize(),
-    "Restart Policy": container_data['HostConfig']['RestartPolicy']['Name']
-  })]
-) }}
-
-
-<div class="card-body">
-  {{ section_card_start("overview", "Container Overview", "mb-3 mt-1") }}
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">
-      <i class="bi bi-box me-2"></i>
-      {{ container_data.Name[1:] }}
-    </h4>
-    {{ 
-      container_data.State.Status
-      | title
-      | badge('success' if container_data.State.Running else 'danger', "fs-6")
-    }}
-
-  </div>
-  {{ 
-    ( 
-    container_data.Config.Image
-      | labeled_val("Image")
-      | col("col-md-6")
-    ~ (container_data.Created[:19]
-      | replace('T', ' ')+" UTC")
-      | labeled_val("Created")
-      | col("col-md-6")
-    ~ (container_data.State.StartedAt[:19]
-      | replace('T', ' ')+" UTC")
-      | labeled_val("Started")
-      | col("col-md-6")
-    ~ container_data.Id
-      | labeled_val("Container ID", vclass="font-monospace small")
-      | col("col-md-6"))
-      | row("g-3")
-    ~ section_card_end("overview")
-    ~ section_card_start("network", "Network Configuration")
-  }}
-  <div class="row">
-    <div class="col-lg-6 mb-2">
-      <h5><i class="bi bi-ethernet me-2"></i>Port Mappings</h5>
-      <div class="table-responsive">
-        <table class="table table-sm table-striped">
-          {{
-            ( 
-              "Container Port"
-                | th 
-              ~ "Host Port" 
-                | th
-              ~ "Protocol"  
-                | th 
-              ~ "IP Version"
-                | th 
-            ) | thead
-          }}
-          <tbody>
-            {% for port, bindings in container_data.NetworkSettings.Ports.items() %}
-              {% if bindings %}
-                {% for binding in bindings %}
-                  {% set ip = binding.HostIp %}
-                  {% set ip_version = "IPv6" if "::" in ip else "IPv4" %}
-                  {{
-                  ( 
-                    port.split('/')[0]
-                      | td("font-monospace")
-                    ~ binding.HostPort
-                      | td("font-monospace")
-                    ~ port.split('/')[1].upper()
-                      | badge("secondary")
-                      | td
-                    ~ ip_version
-                      | td 
-                  ) | tr 
-                  }}
-                {% endfor %}
-              {% endif %}
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <div class="col-lg-6 mb-0">
-      <h5><i class="bi bi-diagram-3 me-2"></i>Network Information</h5>
-      {% for network_name, network_info in container_data.NetworkSettings.Networks.items() %}
-      <div class="mb-1">
-        <h6 class="text-primary">{{ network_name }}</h6>
-        {{( 
-          network_info.IPAddress
-            | labeled_val("IP Address", vclass="font-monospace")
-            | col("col-md-6")
-          ~ network_info.Gateway
-            | labeled_val("Gateway", vclass="font-monospace")
-            | col("col-md-6")
-          ~ network_info.MacAddress
-            | labeled_val("MAC Address", vclass="font-monospace small")
-            | col("col-md-6")
-          ~ network_info.NetworkID
-            | labeled_val("Network ID", vclass="font-monospace small")
-            | col("col-md-6")
-        ) | row("g-2") }}
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-  {{ section_card_end("network") }}
-
-
-  {{ section_card_start("storage", "Storage Configuration") }}
-  
-  <h5><i class="bi bi-hdd me-2"></i>Volume Mounts</h5>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped">
-      {{
+{{ 
+  (
+    cd.container_header(
+      container.name,
+      "docker.containers.index",
+      "Back to containers",
+      value_boxes = [cd.header_value_box({
+        "Image" : container.image.tags[0],
+        "Created" : pretty_date(from_rfc_timestamp(container_data['Created'])),
+        "Status": container_data['State']['Status'].capitalize(),
+        "Restart Policy": container_data['HostConfig']['RestartPolicy']['Name']
+      })]
+    ) 
+    ~ (
       (
-        "Source"
-          | th
-        ~ "Destination"
-          | th
-        ~ "Mode"
-          | th
-      ) | tr | thead
-      }}
-      <tbody>
-        {% for mount in container_data.Mounts %}
-        {{
-          ( 
-            mount.Source
-              | td("font-monospace fw-normal")
-            ~ mount.Destination
-              | td("font-monospace fw-normal")
-            ~ mount.Mode.upper()
-              | badge('success' if mount.RW else 'warning')
-              | td
-          ) | tr 
-        }}
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {{ section_card_end("storage") }}
-
-
-
-  {{ section_card_start("environment", "Environment") }}
-    {{ "Environment Variables" | icon_heading("gear") }}
-    <div class="list-group list-group-flush">
-      {% for env in container_data.Config.Env %}
-      {% set key, value = env.split('=', 1) %}
-      <div class="list-group-item px-0 py-2">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <strong class="text-primary">{{ key }}</strong>
-            <div class="font-monospace small text-muted">{{ value }}</div>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  {{ section_card_end("environment") }}
-
-
-  {{
-    (
-
-      "Resource Configuration" | icon_heading("cpu")
+        (
+          (
+            i(classes="bi bi-box me-2")
+            ~ container_data.Name[1:]
+          ) | h4("mb-0")
+          ~ container_data.State.Status
+            | title
+            | bs.badge(classes=(
+                (
+                  'bg-success'
+                  if container_data.State.Running
+                  else 'bg-danger'
+                )
+                ~"fs-6"
+              )
+            )
+        ) | div("d-flex justify-content-between align-items-center mb-3")
+        ~ ( 
+          container_data.Config.Image
+            | cd.labeled_val("Image"),
+          (container_data.Created[:19]
+            | replace('T', ' ')+" UTC")
+            | cd.labeled_val("Created"),
+          (container_data.State.StartedAt[:19]
+            | replace('T', ' ')+" UTC")
+            | cd.labeled_val("Started"),
+          container_data.Id
+            | cd.labeled_val("Container ID", vclass="font-monospace small"),
+        ) | jacc(bs.col) 
+          | bs.row("g-3")
+      ) | cd.section_card("overview", "Container Overview", "mb-3 mt-1")
       ~ (
-        (container_data.HostConfig.Memory if container_data.HostConfig.Memory > 0 else 'Unlimited')
-          | labeled_val("Memory Limit")
-          | col("col-6")
-        ~ (container_data.HostConfig.CpuShares if container_data.HostConfig.CpuShares > 0 else 'Default')
-          | labeled_val("CPU Shares")
-          | col("col-6") 
-        ~ container_data.HostConfig.RestartPolicy.Name
-          | labeled_val("Restart Policy")
-          | col("col-6") 
-        ~ ('Yes' if container_data.HostConfig.Privileged else 'No')
-          | badge('warning' if container_data.HostConfig.Privileged else 'success')
-          | labeled_val("Privileged")
-          | col("col-6") 
-      ) | row("g-2")
-        | div("col-lg-6 mb-2")
-
-      ~ "Container State" | icon_heading("activity")
+        (
+          (
+            i(classes="bi bi-ethernet me-2")
+            ~ "Port Mappings"
+          ) | h5("mb-0")
+          ~ (
+            ("Container Port", "Host Port", "Protocol", "IP Version")
+              | cd.table_head
+            ~ container_data.NetworkSettings.Ports.items()
+              | jacc(make_port_items)
+              | tbody
+          ) | cd.table
+            | div("table-responsive")
+        ) | bs.col_lg_6("mb-2")
+        ~ (
+          (
+            i(classes="bi bi-diagram-3 me-2")
+            ~ "Network Information"
+          ) | h5("mb-0")
+          ~ container_data.NetworkSettings.Networks.items()
+            | jacc(make_network_item)
+            | safe
+        ) | bs.col_lg_6("mb-0") 
+      ) | bs.row
+        | cd.section_card("network", "Network Configuration")
       ~ (
-        container_data.State.Pid
-          | labeled_val("Process ID", vclass="font-monospace")
-          | col("col-6") 
-        ~ container_data.State.ExitCode
-          | labeled_val("Exit Code", vclass="font-monospace")
-          | col("col-6") 
-        ~ ('Yes' if container_data.State.OOMKilled else 'No')
-          | badge('danger' if container_data.State.OOMKilled else 'success')
-          | labeled_val("OOM Killed")
-          | col("col-6") 
-        ~ container_data.RestartCount
-          | labeled_val("Restart Count")
-          | col("col-6") 
-      ) | row("g-2")
-        | div("col-lg-6 mb-2")
+        (
+          "Volume Mounts"
+          ~ i(content="", classes="bi bi-hdd me-2")
+        ) | h5
+        ~ (
+          ("Source", "Destination", "Mode")
+            | cd.table_head
+          ~ container_data.Mounts
+            | jacc(make_mount_item)
+            | tbody
+        ) | cd.table
+          | div("table-responsive")
+      ) | cd.section_card("storage", "Storage Configuration")
 
-    ) | row
-      | section_card("resources", "Resource & State Management")
-  }}
-</div>
-{{ container_end() }}
+      ~ (
+        "Environment Variables"
+          | cd.icon_heading("gear")
+        ~ container_data.Config.Env
+          | jacc(make_env_item)
+          | bs.list_group_flush
+      ) | cd.section_card("environment", "Environment")
+
+      ~ (
+        "Resource Configuration"
+          | cd.icon_heading("cpu")
+        ~ (
+          (
+            container_data.HostConfig.Memory
+            if container_data.HostConfig.Memory > 0
+            else 'Unlimited'
+          ) | cd.labeled_val("Memory Limit"),
+          (
+            container_data.HostConfig.CpuShares
+            if container_data.HostConfig.CpuShares > 0
+            else 'Default'
+          ) | cd.labeled_val("CPU Shares"),
+          container_data.HostConfig.RestartPolicy.Name
+            | cd.labeled_val("Restart Policy"),
+          ('Yes' if container_data.HostConfig.Privileged else 'No')
+            | bs.badge(
+              classes ='bg-warning'
+              if container_data.HostConfig.Privileged
+              else 'bg-success'
+            )
+            | cd.labeled_val("Privileged"),
+        ) | jacc(bs.col_6)
+          | bs.row("g-2")
+          | div("col-lg-6 mb-2")
+
+        ~ "Container State"
+          | cd.icon_heading("activity")
+        ~ (
+          container_data.State.Pid
+            | cd.labeled_val("Process ID", vclass="font-monospace"),
+          container_data.State.ExitCode
+            | cd.labeled_val("Exit Code", vclass="font-monospace"),
+          ('Yes' if container_data.State.OOMKilled else 'No')
+            | bs.badge(
+                classes = 'bg-danger'
+                if container_data.State.OOMKilled 
+                else 'bg-success'
+              )
+            | cd.labeled_val("OOM Killed"),
+          container_data.RestartCount
+            | cd.labeled_val("Restart Count")
+        ) | jacc(bs.col_6)
+          | bs.row("g-2")
+          | div("col-lg-6 mb-2")
+      ) | bs.row
+        | cd.section_card("resources", "Resource & State Management")
+    ) | bs.card_body     
+  ) | bs.card
+    | bs.container("my-4")
+}}
 {% endautoescape %}
 {% endblock %}

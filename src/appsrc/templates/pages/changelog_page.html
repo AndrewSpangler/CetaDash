@@ -5,9 +5,11 @@
 {{
 (edit_log.message or "NO LOG CONTENT")
   | replace("\n", "<br>")
-  | col("font-monospace")
-  | row
-  | section_card("changes", "Changes")
+  | replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
+  | replace(" ", "&nbsp;")
+  | bs.col("font-monospace")
+  | bs.row
+
 }}
 {% endautoescape %}
 {% endblock %}

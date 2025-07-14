@@ -1,18 +1,18 @@
+abstract viewer card
+move more macros to wtf templates
+move search bar to wtf(internal)
 
-
-merge customtable and normal table js somehow (just call a macro?)
-add started and ended to run logs
-
+Trigger logs store ran endpoint as string, save session id and put on logs page
+add start and end times to run logs
+TRACK EDIT VERSIONS IN RUN LOGS
 
 make confirm button a js script wrapper
-list of associated workflows in task
-
-series of dropdowns with labeled sections for run logs
+move from "edited" to "updated" for table headers
 
 
 HIGH PRIORITY:
- - Trigger logs store ran endpoint as string, save session id
- - finish schedule trigger logs
+
+
  - add workspace logging to container runtime errors (leverage the existing message queue to also write to stdout with context)
  - add action buttons to container view page
  - add layered env to trigger handling
@@ -48,11 +48,8 @@ SCHEDULED TRIGGERS:
 
 
 JSDATATABLES:
- - move to macro
  - move jsdatatable buttons to a dropdown
- - consolidate custom and normal jsdatatables scripts
  - attribute-based table factory?
- - add arg to set table per-page for given pages that should be longer or shorter
 
 
 DOCU:
@@ -80,4 +77,34 @@ COSMETIC:
  - per-user personal theme overrides from db
 
 
-TRACK EDIT VERSIONS IN RUN LOGS
+
+
+
+
+
+
+
+
+
+
+
+{# Macro for table header #}
+{% macro table_header(columns) %}
+{% set header_cells = [] %}
+{% for column in columns %}
+{% if header_cells.append(column | th) %}{% endif %}
+{% endfor %}
+{{ header_cells | join("") | tr | thead | safe }}
+{% endmacro %}
+
+{# Macro for trigger log table #}
+{% macro trigger_log_table(log) %}
+{{ 
+  (
+    table_header(["ID", "Trigger", "Status", "User", "Timestamp"])
+    ~ trigger_log_row(log)
+      | tr
+      | tbody
+  ) | safe
+}}
+{% endmacro %}

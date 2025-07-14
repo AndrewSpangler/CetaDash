@@ -21,14 +21,29 @@
 {% autoescape false %}
 {{
   (
-    (trigger.headers or "")
-      | yaml_viewer("headers", "Proxy Headers Translation")
-    ~ (trigger.environment or "")
-      | env_viewer("environment", "Environment")
-  ) | row
-    | section_card("config", "Configuration")
+    (
+      "Proxy Headers Translation"
+        | b
+        | bs.card_header("bg-dark text-white")
+      ~ (trigger.headers or "")
+        | cm.yaml_viewer(id="headers")
+        | bs.card_body("px-0 py-0")
+    ),
+    (
+      "Environment"
+        | b
+        | bs.card_header("bg-dark text-white")
+      ~ (trigger.environment or "")
+        | cm.env_viewer(id="environment")
+        | bs.card_body("px-0 py-0")
+    )
+  ) | acc(bs.card, classes="px-0")
+    | jacc(bs.col_md_6, classes="col-sm-12 px-0")
+    | bs.row
+    | bs.card_body("mt-0 pt-1")
+    | cd.section_card("config", "Configuration")
   ~ trigger_log_table(trigger)
-    | section_card("logs", "Run Logs")
+    | cd.section_card("logs", "Run Logs")
 }}
 {% endautoescape %}
 {% endblock %}

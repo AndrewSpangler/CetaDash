@@ -156,7 +156,7 @@ $(document).ready(function () {
       new SimpleMDE({ element: this });
   });
 
-  
+
   $('form.mdeform').each(function () {
       var form = this;
       $(form).addClass('bg-light text-dark');

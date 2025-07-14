@@ -3,31 +3,26 @@
 {% autoescape false %}
 
 {{
+(
   (
     form.name
-      | string_field("Name Cannot Be Blank")
-      | col
-    ~ form.description
-      | string_field("Short description...")
-      | col
-  ) | row("mb-0")
-
-  ~ (
+      | wtff.string_field(placeholder="Name Cannot Be Blank"),
+    form.description
+      | wtff.string_field(placeholder="Short description...")
+  ) | jacc(bs.col),
+  (
     form.details
-      | md_field
-      | col("mb-0")
-    ~ form.environment
-      | env_field
-      | col("mb-0")
-  ) | row("mb-0")
-
-  ~ (
+      | mde.md_field,
+    form.environment
+      | cm.env_field,
+  ) | jacc(bs.col, classes="mb-0 mt-2"),
+  (
     form.template
-      | yaml_field
-      | col
+      | cm.yaml_field
     ~ "Header variables defined in triggers may be used as template variables here."
-      | note
-  ) | row("mb-0") 
+      | cd.note
+  ) | bs.col("mt-3")
+) | jacc(bs.row, classes="mb-0")
 }}
 
 {% endautoescape %}

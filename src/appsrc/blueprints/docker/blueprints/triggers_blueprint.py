@@ -100,6 +100,7 @@ def create():
     form = TriggerForm()
     form.workflow_id.choices = [(w.id, w.name) for w in Workflow.query.order_by(Workflow.name).all()]
     if form.validate_on_submit():
+        print(form.headers.data, form.environment.data)
         trigger = WorkflowTrigger(
             name=form.name.data,
             endpoint=form.endpoint.data,
@@ -109,6 +110,7 @@ def create():
             last_editor_id=current_user.id,
             workflow_id=form.workflow_id.data,
             headers=form.headers.data,
+            environment=form.environment.data
         )
         db.session.add(trigger)
         db.session.commit()
@@ -116,7 +118,7 @@ def create():
         db.session.commit()
         trigger_id = trigger.id
         flash('Workflow Trigger created successfully!', 'success')
-        return redirect(url_for('docker.triggers.edit', trigger_id=trigger_id))
+        return redirect(url_for('docker.triggers.view', trigger_id=trigger_id))
     return render_template('trigger/new.html', form=form)
 
 
@@ -151,6 +153,7 @@ def edit(trigger_id):
             "headers": form.headers.data,
             "environment": form.environment.data,
         }
+        print(after)
         for k, v in after.items():
             setattr(trigger, k, v)
         changes = app.models.core.make_changelog(before, after)
@@ -195,14 +198,9 @@ def edits(trigger_id, log_id):
 def logs(trigger_id, log_id):
     trigger = WorkflowTrigger.query.get_or_404(trigger_id) 
     run_log = WorkflowTriggerRunLog.query.get_or_404(log_id)
-
     if not trigger.id == run_log.workflow_trigger.id:
         raise ValueError("Trigger and edit log do not match")
-
-    return render_template(
-        'log_stack_page.html',
-        log=run_log
-    )
+    return render_template('pages/log_stack_page.html', log=run_log)
 
 @blueprint.route('/trigger/<trigger_id>/delete', methods=['POST'])
 @app.permission_required(app.models.core.PERMISSION_ENUM.ADMIN)

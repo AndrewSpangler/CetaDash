@@ -1,0 +1,5 @@
+{{
+  content
+    | table(id=id, classes=classes, width="100%")
+    | safe
+}}

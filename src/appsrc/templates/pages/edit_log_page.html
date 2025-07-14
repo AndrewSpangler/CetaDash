@@ -9,7 +9,7 @@
 %}
 
 {% macro edit_log_page_header(edit_log) %}
-{{ container_header(
+{{ cd.container_header(
   "Log - {edit_log.id}",
   "",
   "",
@@ -20,11 +20,11 @@
 
 {% block content %}
 {% autoescape false %}
-{{ container_start() }}
+{{ cd.container_start() }}
 {{ edit_log_page_header(edit_log) }}
 <div class="card-body">
 {% block page_content %}{% endblock %}
 </div>
-{{ container_end() }}
+{{ cd.container_end() }}
 {% endautoescape %}
 {% endblock %}

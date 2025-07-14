@@ -20,7 +20,7 @@
 %}
 {% endif %}
 {% set value_box=creator_editor_box(obj) %}
-{{ container_header(
+{{ cd.container_header(
   obj.name,
   back_url,
   back_text,
@@ -38,13 +38,13 @@
 {% block content %}
 {% autoescape false %}
 {{
-  container_start()
+  cd.container_start()
   ~ view_page_header(obj, edit_box, value_boxes)
 }}
 <div class="card-body">
 {% block page_content %}{% endblock %}
 </div>
-{{ container_end() }}
+{{ cd.container_end() }}
 {% endautoescape %}
 {% endblock %}
 

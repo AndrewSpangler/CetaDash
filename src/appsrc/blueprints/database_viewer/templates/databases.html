@@ -4,12 +4,12 @@
 {% block content %}
 {% autoescape False %}
 {{ 
-  container_start()
-  ~ container_header('Databases')
+  cd.container_start()
+  ~ cd.container_header('Databases')
 }}
 <div class="card-body">
   {% include "includes/databases_table.html" %}
 </div>
-{{ container_end() }}
+{{ cd.container_end() }}
 {% endautoescape %}
 {% endblock %}

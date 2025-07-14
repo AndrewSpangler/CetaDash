@@ -1,27 +1,33 @@
+{# task_name_map and available_tasks provided by render_template #}
+
 {% extends "pages/form_page.html" %}
 
 {% block form_content %}
 {% autoescape false %}
-
 {{
 (
-  form.name
-    | string_field("Enter workflow name")
-    | col("mb-0")
-  ~ form.description
-    | textarea_field
-    | col("mb-0")
-) | row("mb-0")
-
-~ (
-  form.details
-    | md_field
-    | col
-  ~ form.tasks
-    | sortable_field(task_name_map, available_tasks, label="Task Order")
-    | col
-) | row("mb-0")
+  (
+    form.name
+    | wtff.string_field(
+      placeholder="Enter workflow name"
+    ),
+    form.description
+    | wtff.string_field(
+      placeholder="A short description"
+    )
+  ) | jacc(bs.col, classes="mb-0"),
+  (
+    form.details
+      | mde.md_field,
+    form.tasks
+      | wtff.sortable_field(
+        task_name_map,
+        available_tasks,
+        label="Task Order"
+      )
+  ) | jacc(bs.col, classes="mt-3")
+  
+) | jacc(bs.row, classes="mb-0")
 }}
-
 {% endautoescape %}
 {% endblock %}

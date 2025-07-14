@@ -2,7 +2,16 @@
 {% macro scheduler_edit_log_link(log) %}
 {{
   log.id
-  | a(url_for("docker.scheduler.edits", trigger_id=log.schedule_trigger.id, log_id=log.id))
+  | a(href=url_for("docker.scheduler.edits", trigger_id=log.schedule_trigger.id, log_id=log.id))
+  | safe
+}}
+{% endmacro %}
+
+
+{% macro scheduler_run_log_link(log, _anchor = None) %}
+{{
+  log.id
+  | a(href=url_for("docker.scheduler.logs", trigger_id=log.schedule_trigger.id, log_id=log.id, _anchor = _anchor))
   | safe
 }}
 {% endmacro %}
@@ -11,7 +20,7 @@
 {% macro task_edit_log_link(log) %}
 {{
   log.id
-  | a(url_for("docker.tasks.edits", task_id=log.task.id, log_id=log.id))
+  | a(href=url_for("docker.tasks.edits", task_id=log.task.id, log_id=log.id))
   | safe
 }}
 {% endmacro %}
@@ -20,7 +29,7 @@
 {% macro workflow_edit_log_link(log) %}
 {{
   log.id
-  | a(url_for("docker.workflows.edits", workflow_id=log.workflow.id, log_id=log.id))
+  | a(href=url_for("docker.workflows.edits", workflow_id=log.workflow.id, log_id=log.id))
   | safe
 }}
 {% endmacro %}
@@ -29,16 +38,23 @@
 {% macro trigger_edit_log_link(log) %}
 {{
   log.id
-  | a(url_for("docker.triggers.edits", trigger_id=log.workflow_trigger.id, log_id=log.id))
+  | a(href=url_for("docker.triggers.edits", trigger_id=log.workflow_trigger.id, log_id=log.id))
   | safe
 }}
 {% endmacro %}
 
+{% macro trigger_run_log_link(log) %}
+{{
+  log.id
+  | a(href=url_for("docker.triggers.logs", trigger_id=log.workflow_trigger.id, log_id=log.id))
+  | safe
+}}
+{% endmacro %}
 
 {% macro task_link(task) %}
 {{
   ("[" ~ task.id ~ "] " ~ task.name)
-  | a(url_for("docker.tasks.view", task_id=task.id))
+  | a(href=url_for("docker.tasks.view", task_id=task.id))
   | safe
 }}
 {% endmacro %}
@@ -47,7 +63,7 @@
 {% macro workflow_link(workflow) %}
 {{
   ("[" ~ workflow.id ~ "] " ~ workflow.name)
-  | a(url_for("docker.workflows.view", workflow_id=workflow.id))
+  | a(href=url_for("docker.workflows.view", workflow_id=workflow.id))
   | safe
 }}
 {% endmacro %}
@@ -56,7 +72,7 @@
 {% macro trigger_link(trigger) %}
 {{
   ("[" ~ trigger.id ~ "] " ~ trigger.name)
-  | a(url_for("docker.triggers.view", trigger_id=trigger.id))
+  | a(href=url_for("docker.triggers.view", trigger_id=trigger.id))
   | safe
 }}
 {% endmacro %}
@@ -65,8 +81,21 @@
 {% macro schedule_trigger_link(trigger) %}
 {{
   ("[" ~ trigger.id ~ "] " ~ trigger.name)
-  | a(url_for("docker.scheduler.view", trigger_id=trigger.id))
+  | a(href=url_for("docker.scheduler.view", trigger_id=trigger.id))
   | safe
+}}
+{% endmacro %}
+
+
+{% macro status_to_class(status) %}{{"success" if status == 0 else "danger"}}{% endmacro %}
+
+
+{% macro status_badge(status) %}
+{{
+  app.models.docker.STATUS_ENUM._NAMES[status]
+    | small
+    | bs.badge(status_to_class(status), "text-light float-right")  
+    | safe
 }}
 {% endmacro %}
 
@@ -75,41 +104,120 @@
   {% macro task_log_row(l) %}
     {{
       (
-        l.timestamp_pretty
-          | td
-        ~ app.models.docker.STATUS_ENUM._NAMES[l.status]
-          | td
-        ~ l.user.name
-          | td
-        ~ workflow_link(l.workflow_log.workflow)
-          | td
-        ~ l.workflow_log.id
-          | td
-        ~ trigger_link(l.workflow_log.trigger_log.workflow_trigger)
-          | td
-        ~ l.workflow_log.trigger_log.id
-          | td
-      ) | tr
-        | safe
+        l.timestamp_pretty,
+        app.models.docker.STATUS_ENUM._NAMES[l.status],
+        l.user.name,
+        workflow_link(l.workflow_log.workflow),
+        l.workflow_log.id,
+        trigger_link(l.workflow_log.trigger_log.workflow_trigger),
+        l.workflow_log.trigger_log.id,
+      ) | jacc(td) | tr | safe
     }}
   {% endmacro %}
   {{
     (
       (
-        "Run Timestamp"         | th
-        ~ "Run Status"          | th
-        ~ "Runner"              | th
-        ~ "Workflow [ID] Name"  | th
-        ~ "Workflow Log"        | th
-        ~ "Trigger [ID]"        | th
-        ~ "Trigger Log"         | th
-      ) | tr 
-        | thead
+        "Run Timestamp",
+        "Run Status",
+        "Runner",
+        "Workflow [ID] Name",
+        "Workflow Log",
+        "Trigger [ID]",
+        "Trigger Log"
+      ) | cd.table_head
       ~ task.run_logs
-        | accumulate(task_log_row)
-        | join("")
+        | jacc(task_log_row)
         | tbody
-    ) | table(id="task_run_log_"~task.id)
+    ) | cd.table(id="task_run_log_" ~ task.id ~ "_table")
+      | safe
+  }}
+{% endmacro %}
+
+
+{% macro workflow_schedules_table(workflow) %}
+{# Gets all schedules associated with a workflow #}
+  {% macro trigger_row(trigger) %}
+    {{
+      (
+        trigger_link(trigger),
+        trigger.schedule_string,
+        trigger.created_at_pretty,
+        trigger.edited_at_pretty
+      ) | jacc(td) | tr | safe
+    }}
+  {% endmacro %}
+  {{
+    (
+      (
+        "Trigger ID [Name]",
+        "Config",
+        "Created",
+        "Updated"
+      ) | cd.table_head
+      ~ workflow.workflow_schedules
+        | jacc(trigger_row)
+        | tbody
+    ) | cd.table(id="workflow_triggers_" ~ workflow.id ~ "_table")
+      | safe
+  }}
+{% endmacro %}
+
+
+{% macro workflow_triggers_table(workflow) %}
+  {# Gets all triggers associated with a workflow #}
+  {% macro trigger_row(trigger) %}
+    {{
+      (
+        trigger_link(trigger),
+        trigger.endpoint,
+        trigger.created_at_pretty,
+        trigger.edited_at_pretty
+      ) | jacc(td) | tr | safe
+    }}
+  {% endmacro %}
+  
+  {{
+    (
+      (
+        "Trigger ID [Name]",
+        "Endpoint",
+        "Created",
+        "Updated"
+      ) | cd.table_head
+      ~ workflow.workflow_triggers
+        | jacc(trigger_row)
+        | tbody
+    ) | cd.table(id="workflow_triggers_" ~ workflow.id ~ "_table")
+      | safe
+  }}
+{% endmacro %}
+
+
+{% macro task_workflow_association_table(task) %}
+  {% macro task_workflow_association_row(association) %}
+    {{
+      (
+        association.workflow.id,
+        workflow_link(association.workflow),
+        (association.priority + 1),
+        association.workflow.created_at_pretty,
+        association.workflow.edited_at_pretty
+      ) | jacc(td) | tr | safe
+    }}
+  {% endmacro %}
+  {{
+    (
+      (
+        "Workflow ID",
+        "Workflow Name",
+        "Priority",
+        "Created",
+        "Updated"
+      ) | cd.table_head
+      ~ task.workflow_associations
+        | jacc(task_workflow_association_row)
+        | tbody
+    ) | cd.table(id="task_workflows_" ~ task.id ~ "_table")
       | safe
   }}
 {% endmacro %}
@@ -119,41 +227,31 @@
   {% macro scheduled_task_log_row(l) %}
     {{
       (
-        l.timestamp_pretty
-          | td
-        ~ app.models.docker.STATUS_ENUM._NAMES[l.status]
-          | td
-        ~ (l.user.name if l.user else "System")
-          | td
-        ~ workflow_link(l.workflow_log.workflow)
-          | td
-        ~ l.workflow_log.id
-          | td
-        ~ schedule_trigger_link(l.workflow_log.schedule_trigger_log.schedule_trigger) 
-          | td
-        ~ l.workflow_log.schedule_trigger_log.id
-          | td
-      ) | tr
-        | safe
+        l.timestamp_pretty,
+        app.models.docker.STATUS_ENUM._NAMES[l.status],
+        (l.user.name if l.user else "System"),
+        workflow_link(l.workflow_log.workflow),
+        l.workflow_log.id,
+        schedule_trigger_link(l.workflow_log.schedule_trigger_log.schedule_trigger),
+        scheduler_run_log_link(l.workflow_log.schedule_trigger_log),
+      ) | jacc(td) | tr | safe
     }}
   {% endmacro %}
   {{
     (
       (
-        "Run Timestamp"         | th
-        ~ "Run Status"          | th
-        ~ "Runner"              | th
-        ~ "Workflow [ID] Name"  | th
-        ~ "Workflow Log"        | th
-        ~ "Trigger [ID] Name"   | th
-        ~ "Trigger Log"         | th
-      ) | tr 
-        | thead
+        "Run Timestamp",
+        "Run Status",
+        "Runner",
+        "Workflow [ID] Name",
+        "Workflow Log",
+        "Trigger [ID] Name",
+        "Trigger Log"
+      ) | cd.table_head
       ~ task.scheduled_run_logs
-        | accumulate(scheduled_task_log_row)
-        | join(" ")
+        | jacc(scheduled_task_log_row)
         | tbody
-    ) | table(id="scheduled_task_run_log_"~task.id)
+    ) | cd.table(id="scheduled_task_run_log_" ~ task.id ~ "_table")
       | safe
   }}
 {% endmacro %}
@@ -163,38 +261,25 @@
   {% macro workflow_task_row(assoc) %}
     {{
       (
-        (assoc.priority + 1)
-          | td
-        ~ task_link(assoc.task)
-          | td
-        ~ assoc.task.created_at_pretty
-          | td
-        ~ assoc.task.creator.name
-          | td
-        ~ assoc.task.edited_at_pretty
-          | td
-        ~ assoc.task.last_editor.name
-          | td
-      ) | tr
-        | safe
+        (assoc.priority + 1),
+        task_link(assoc.task),
+        assoc.task.created_at_pretty,
+        assoc.task.edited_at_pretty,
+      ) | jacc(td) | tr | safe
     }}
   {% endmacro %}
   {{
     (
       (
-        "Step"              | th
-        ~ "Task [ID] Name"  | th
-        ~ "Created"         | th
-        ~ "Creator"         | th
-        ~ "Edited"          | th
-        ~ "Editor"          | th
-      ) | tr 
-        | thead
+        "Step",
+        "Task [ID] Name",
+        "Created",
+        "Updated",
+      ) | cd.table_head
       ~ workflow.task_associations.order_by(app.models.docker.WorkflowTaskAssociation.priority.asc())
-        | accumulate(workflow_task_row)
-        | join(" ")
+        | jacc(workflow_task_row)
         | tbody
-    ) | table(id="workflow_tasks_"~workflow.id)
+    ) | cd.table(id="workflow_tasks_" ~ workflow.id ~ "_table")
       | safe
   }}
 {% endmacro %}
@@ -204,40 +289,29 @@
   {% macro workflow_log_row(l) %}
     {{
       (
-        l.timestamp_pretty
-          | td
-        ~ app.models.docker.STATUS_ENUM._NAMES[l.status]
-          | td
-        ~ l.user.name
-          | td
-        ~ trigger_link(l.trigger_log.workflow_trigger)
-          | td
-        ~ l.trigger_log.id
-          | td
-        ~ l.task_logs
-          | collect_attr("id")
-          | join(" ")
-          | td
-      ) | tr
-        | safe
+        l.timestamp_pretty,
+        app.models.docker.STATUS_ENUM._NAMES[l.status],
+        l.user.name,
+        trigger_link(l.trigger_log.workflow_trigger),
+        l.trigger_log.id,
+        l.task_logs | jcattr("id", " "),
+      ) | jacc(td) | tr | safe
     }}
   {% endmacro %}
   {{
     (
       (
-        "Run Timestamp"       | th
-        ~ "Run Status"        | th
-        ~ "Runner"            | th
-        ~ "Trigger [ID] Name" | th
-        ~ "Trigger Log"       | th
-        ~ "Task Logs"         | th
-      ) | tr 
-        | thead
+        "Run Timestamp",
+        "Run Status",
+        "Runner",
+        "Trigger [ID] Name",
+        "Trigger Log",
+        "Task Logs",
+      ) | cd.table_head
       ~ workflow.run_logs
-        | accumulate(workflow_log_row)
-        | join(" ")
+        | jacc(workflow_log_row)
         | tbody
-    ) | table(id="workflow_run_log_"~workflow.id)
+    ) | cd.table(id="workflow_run_log_"~workflow.id ~ "_table")
       | safe
   }}
 {% endmacro %}
@@ -247,40 +321,29 @@
   {% macro workflow_scheduled_log_row(l) %}
     {{
       (
-        l.timestamp_pretty
-          | td
-        ~ app.models.docker.STATUS_ENUM._NAMES[l.status]
-          | td
-        ~ l.user.name
-          | td
-        ~ schedule_trigger_link(l.schedule_trigger_log.schedule_trigger)
-          | td
-        ~ l.schedule_trigger_log.id
-          | td
-        ~ l.scheduled_task_logs
-          | collect_attr("id")
-          | join(" ")
-          | td
-      ) | tr
-        | safe
+        l.timestamp_pretty,
+        app.models.docker.STATUS_ENUM._NAMES[l.status],
+        l.user.name,
+        schedule_trigger_link(l.schedule_trigger_log.schedule_trigger),
+        l.schedule_trigger_log.id,
+        l.scheduled_task_logs | jcattr("id", " "),
+      ) | jacc(td) | tr | safe
     }}
   {% endmacro %}
   {{
     (
       (
-        "Run Timestamp"       | th
-        ~ "Run Status"        | th
-        ~ "Runner"            | th
-        ~ "Trigger [ID] Name" | th
-        ~ "Trigger Log"       | th
-        ~ "Task Logs"         | th
-      ) | tr 
-        | thead
+        "Run Timestamp",
+        "Run Status",
+        "Runner",
+        "Trigger [ID] Name",
+        "Trigger Log",
+        "Task Logs"
+      ) | cd.table_head
       ~ workflow.schedule_run_logs
-        | accumulate(workflow_scheduled_log_row)
-        | join(" ")
+        | jacc(workflow_scheduled_log_row)
         | tbody
-    ) | table(id="workflow_scheduled_log_" ~ workflow.id)
+    ) | cd.table(id="workflow_scheduled_log_" ~ workflow.id ~ "_table")
       | safe
   }}
 {% endmacro %}
@@ -290,40 +353,29 @@
   {% macro trigger_log_row(l) %}
     {{
       (
-        l.timestamp_pretty
-          | td
-        ~ models.docker.STATUS_ENUM._NAMES[l.status]
-          | td
-        ~ l.user.name
-          | td
-        ~ workflow_link(l.workflow_log.workflow)
-          | td
-        ~ l.workflow_log.id
-          | td
-      ) | tr
-        | safe
+        l.timestamp_pretty,
+        models.docker.STATUS_ENUM._NAMES[l.status],
+        l.user.name,
+        workflow_link(l.workflow_log.workflow),
+        l.workflow_log.id,
+      ) | jacc(td) | tr | safe
     }}
   {% endmacro %}
   {{
     (
       (
-        "Run Timestamp"  
-          | th
-        ~ "Run Status"   
-          | th
-        ~ "Runner"       
-          | th
-        ~ "Workflow"     
-          | th
-        ~ "Workflow Log" 
-          | th
-      ) | tr 
+        "Run Timestamp",
+        "Run Status",
+        "Runner",
+        "Workflow",
+        "Workflow Log"
+      ) | jacc(th)
+        | tr
         | thead
       ~ trigger.run_logs
-        | accumulate(trigger_log_row)
-        | join(" ")
+        | jacc(trigger_log_row)
         | tbody
-    ) | table(id="trigger_log_"~trigger.id)
+    ) | cd.table(id="trigger_log_" ~ trigger.id ~ "_table",)
       | safe
   }}
 {% endmacro %}

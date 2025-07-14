@@ -1,0 +1,5 @@
+{{
+    cd.section_card_start(id, label, classes)
+    ~ content
+    ~ cd.section_card_end(id)
+}}

@@ -1,0 +1,6 @@
+{{
+  rows
+    | jacc(cd.table_row)
+    | tbody(id=id, classes=classes)
+    | safe
+}}

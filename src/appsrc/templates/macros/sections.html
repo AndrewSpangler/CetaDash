@@ -42,7 +42,7 @@ style="float:{{float}};">
 
 
 {% macro creator_editor_box(obj) %}
-{{ header_value_box({
+{{ cd.header_value_box({
   "Creator" : obj.creator.name,
   "Created At" : obj.created_at_pretty,
   "Last Editor": obj.last_editor.name if obj.last_editor else 'None',
@@ -52,7 +52,7 @@ style="float:{{float}};">
 
 
 {% macro details_description_card(obj) %}
-{{ section_card_start("description", "About", "my-3 mt-0") | safe }}
+{{ cd.section_card_start("description", "About", "my-3 mt-0") | safe }}
 <div class="card-body markdown-content">
   {% if obj.description %}
   {{ obj.description | markdown }}
@@ -66,156 +66,226 @@ style="float:{{float}};">
   <center><p class="mt-2"><i>Details are empty.</i></p></center>
   {% endif %}
 </div>
-{{ section_card_end("description") | safe }}
+{{ cd.section_card_end("description") | safe }}
 {% endmacro %}
 
 
 {% macro edit_logs_card(obj, log_url_callback) %}
-{{ section_card_start("edit-log", "Edit Logs", "my-3 mt-0") | safe }}
+{{ cd.section_card_start("edit-log", "Edit Logs", "my-3 mt-0") | safe }}
 <table class="table table-striped" id="edit_log_table" width="100%">
   {{
     (
-      "Edit ID"          | th
-      ~ "Edit Timestamp" | th
-      ~ "Editor"         | th
-      ~ "Edit Action"    | th
-    ) | tr | thead | safe
+      "Edit ID",
+      "Edit Timestamp",
+      "Editor",
+      "Edit Action",
+    ) | jacc(th)
+      | tr
+      | thead
+      | safe
   }}
   <tbody>
     {% for log in obj.edit_logs %}
     {{
       (
-        log_url_callback(log)   | td
-        ~ log.timestamp_pretty  | td
-        ~ log.user.name         | td
-        ~ app.models.docker.ACTION_ENUM._NAMES[log.action] | td
-      ) | tr | safe
+        log_url_callback(log),
+        log.timestamp_pretty,
+        log.user.name,
+        app.models.docker.ACTION_ENUM._NAMES[log.action]
+      ) | jacc(td)
+        | tr
+        | safe
     }}
     {% endfor %}
   </tbody>
 </table>
-{{ section_card_end("edit-logs") | safe }}
+{{ cd.section_card_end("edit-logs") | safe }}
 {% endmacro %}
 
 
-{% macro make_script(name, script) %}
+{% macro make_base_table_script() %}
+{{ make_script("", None)|safe }}
+{% endmacro %}
+
+{% macro make_script(name, script, default_rows=25) %}
 $(document).ready(function () {
-  $('[id$="{{name}}_customtable"]').each(function () {
-      var table = $(this).DataTable({
-          scrollX: true,
-          "pageLength": 25,
-          aaSorting: [],
-          columnDefs: [
-              { targets: "_all", className: "dt-left dt-body-left display dt-no-padding" },
-              { type: "string", targets: 0 }
-          ],
-          "oLanguage": {
-              "sSearch": "",
-              "sSearchPlaceholder": "Filter Results",
-              "sLengthMenu": "_MENU_",
+  $('[id$="{{name}}_{% if name %}custom{% endif %}table"]').each(function () {
+    var table = $(this).DataTable({
+      scrollX: true,
+      "pageLength": {{default_rows}},
+      aaSorting: [],
+      columnDefs: [
+        { targets: "_all", className: "dt-left dt-body-left display dt-no-padding" },
+        { type: "string", targets: 0 }
+      ],
+      "oLanguage": {
+        "sSearch": "",
+        "sSearchPlaceholder": "Filter Results",
+        "sLengthMenu": "_MENU_",
+      },
+      "createdRow": function (row, data, dataIndex) {
+        var table = $(this).DataTable();
+        var tableId = table.settings()[0].sTableId;
+        var rawTable = document.getElementById(tableId);
+        var headersRow = rawTable.rows[0];
+        var headerCells = headersRow.cells;
+        
+        {% if script %}
+        {{ script | safe}}
+        {% endif %}
+
+        //$(row).css('background-color', color); 
+        $(row).css('background-opacity', 0.5); 
+      },
+      "drawCallback": function(settings) {
+        var api = new $.fn.dataTable.Api(settings);
+        var info = api.page.info();
+        var container = $(api.table().container());
+        if (info.recordsDisplay <= {{default_rows}}) {
+          container.find('.dt-paging').hide();
+        } else {
+          container.find('.dt-paging').show();
+        }
+      },
+      layout: {
+        top1Start: {
+          search: {
           },
-          "createdRow": function (row, data, dataIndex) {
-              var table = $(this).DataTable();
-              var tableId = table.settings()[0].sTableId;
-              var rawTable = document.getElementById(tableId);
-              var headersRow = rawTable.rows[0];
-              var headerCells = headersRow.cells;
-              
-              {% if script %}
-              {{ script | safe}}
-              {% endif %}
-
-              //var color =;
-              //$(row).css('background-color', color); 
-              $(row).css('background-opacity', 0.5); 
-          },
-          layout: {
-              top1Start: {
-                  search: {
-                  },
-                  pageLength: {
-                      menu: [10, 25, 50, 100, 200, 1000]
-                  },
-                  buttons: [
-                      'copyHtml5',
-                      'excelHtml5',
-                      'csvHtml5',
-                      'pdfHtml5',
-                  ],
-              },
-              top1End: null,
-              topStart: 'info',
-              topEnd: 'paging',
-              bottomStart: 'info',
-              bottomEnd: 'paging'
-          },
-          "initComplete": function () {
-              var api = this.api();
-              var table = api.table(); // Current table
-              var btns = $(table.table().container()).find('.dt-button');
-              btns.addClass('bi');
-              var icon_map = {
-                  "PDF": "bi-filetype-pdf",
-                  "CSV": "bi-filetype-csv",
-                  "Excel":"bi-file-earmark-spreadsheet",
-                  "Copy": "bi-copy",
-              }
-
-              btns.each(function () {
-                  var buttonText = $(this).text().trim();
-                  $(this).addClass(icon_map[buttonText]);
-              });
-              
-
-              btns.addClass('datatables-export text-muted');
-
-              btns.each(function() {
-                  $(this).find('span').prepend('&nbsp;');
-              });
-
-              var mutedColor = getComputedColor('text-primary');
-              var filterInput = $(api.table().container()).find('.dt-input input');
-              filterInput.css('color', mutedColor);
-
-              $(table.table().container()).find('.dt-info').addClass("text-normal");
-              $(table.table().container()).find('.dt-length').find("label").addClass("text-normal");
-              $(api.table().header()).find('th').addClass('bg-dark text-light');
-
-              var primarycolor = getComputedColor('text-light');
-              // Dynamically inject CSS to set placeholder color
-              var style = document.createElement('style');
-              style.innerHTML = '.dt-column-search-input::placeholder { color: ' + primarycolor + '; }';
-              document.getElementsByTagName('head')[0].appendChild(style);
-
-              $(api.table().header()).find('th').each(function (index) {
-                  var column = table.column(index);
-                  var title = $(this).text();
-                  $(this).html(
-                      '<input type="text" class="dt-column-search-input bg-transparent mx-0 my-0 text-light" placeholder="'
-                      + title + '" /><span class="dt-column-title" role="button" style="display:none;">' + title
-                      + '</span><span class="dt-column-order" style="right:0px;top:-4px;"></span>'
-                  );
-                  $('input', this).on('click', function (e) {
-                      e.stopPropagation(); // Prevent propagation to avoid sorting
-                  });
-                  $('input', this).on('keyup change', function () {
-                      if (column.search() !== this.value) {
-                          column.search(this.value).draw();
-                      }
-                  });
-              });
-              $(api.table().header()).find('th').on('click', function (e) {
-                  e.preventDefault(); 
-              });
-
+          pageLength: {
+            menu: [10, 25, 50, 100, 200, 1000]
           }
-      });
-      new $.fn.dataTable.FixedHeader(table);
+        },
+        top1End: {
+          buttons: [
+            'copyHtml5',
+            'excelHtml5',
+            'csvHtml5',
+            'pdfHtml5',
+          ]
+        },
+        topStart: null,
+        topEnd: null,
+        bottomStart: 'info',
+        bottomEnd: 'paging'
+      },
+      "initComplete": function () {
+        var api = this.api();
+        var table = api.table();
+        var btns = $(table.table().container()).find('.dt-button');
+        btns.addClass('bi');
+        var icon_map = {
+          "PDF": "bi-filetype-pdf",
+          "CSV": "bi-filetype-csv",
+          "Excel":"bi-file-earmark-spreadsheet",
+          "Copy": "bi-copy",
+        }
+
+        btns.each(function () {
+          var buttonText = $(this).text().trim();
+          $(this).addClass(icon_map[buttonText]);
+        });
+        
+        btns.addClass('datatables-export text-muted');
+
+        btns.each(function() {
+          $(this).find('span').prepend('&nbsp;');
+        });
+
+        var dropdownHtml = '<div class="dropdown">' +
+          '<button class="btn outline-primary dropdown-toggle bi bi-file-earmark-arrow-down px-2 py-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">' +
+          '</button>' +
+          '<div class="dropdown-menu bg-dark" aria-labelledby="exportDropdown">' +
+          '</div>' +
+          '</div>';
+        
+        var buttonsContainer = $(table.table().container()).find('.dt-buttons');
+        buttonsContainer.html(dropdownHtml);
+        
+        var dropdownMenu = buttonsContainer.find('.dropdown-menu');
+        btns.each(function() {
+          var buttonText = $(this).text().trim();
+          var buttonClass = $(this).attr('class');
+          var buttonClick = $(this).attr('onclick') || '';
+          
+          dropdownMenu.append('<a class="dropdown-item text-light" href="#" onclick="' + buttonClick + '">' + buttonText + '</a>');
+        });
+
+        var mutedColor = getComputedColor('text-primary');
+        var filterInput = $(api.table().container()).find('.dt-input input');
+        filterInput.css('color', mutedColor);
+
+        $(table.table().container()).find('.dt-info').addClass("text-normal");
+        $(table.table().container()).find('.dt-length').find("label").addClass("text-normal");
+        $(api.table().header()).find('th').addClass('bg-dark text-light');
+
+        var primarycolor = getComputedColor('text-light');
+        var style = document.createElement('style');
+        style.innerHTML = `
+          .dt-column-search-input::placeholder { color: ${primarycolor}; }
+          .dt-layout-row:first-child { 
+            display: flex !important; 
+            align-items: center !important; 
+            justify-content: space-between !important; 
+            flex-wrap: nowrap !important; 
+            gap: 10px !important; 
+          }
+          .dt-layout-start { 
+            display: flex !important; 
+            align-items: center !important; 
+            gap: 10px !important; 
+            flex-shrink: 0 !important; 
+            flex-wrap: nowrap !important; 
+            white-space: nowrap !important; 
+          }
+          .dt-layout-end { 
+            flex-shrink: 0 !important; 
+          }
+          .dt-search { 
+            flex-shrink: 0 !important; 
+            display: inline-block !important; 
+          }
+          .dt-length { 
+            flex-shrink: 0 !important; 
+            display: inline-block !important; 
+          }
+          .dt-search input { 
+            min-width: 150px !important; 
+            flex-shrink: 0 !important; 
+          }
+          .dt-length select { 
+            min-width: 60px !important; 
+            flex-shrink: 0 !important; 
+          }
+        `;
+        document.getElementsByTagName('head')[0].appendChild(style);
+
+        $(api.table().header()).find('th').each(function (index) {
+          var column = table.column(index);
+          var title = $(this).text();
+          $(this).html(
+            '<input type="text" class="dt-column-search-input bg-transparent mx-0 my-0 text-light" placeholder="'
+            + title + '" /><span class="dt-column-title" role="button" style="display:none;">' + title
+            + '</span><span class="dt-column-order" style="right:0px;top:-4px;"></span>'
+          );
+          $('input', this).on('click', function (e) {
+            e.stopPropagation();
+          });
+          $('input', this).on('keyup change', function () {
+            if (column.search() !== this.value) {
+              column.search(this.value).draw();
+            }
+          });
+        });
+        $(api.table().header()).find('th').on('click', function (e) {
+          e.preventDefault(); 
+        });
+
+      }
+    });
+    new $.fn.dataTable.FixedHeader(table);
   });
 });
 {% endmacro %}
-
-
 {% macro data_table(
   name,
   columns = [],
@@ -251,3 +321,4 @@ document.addEventListener("DOMContentLoaded", function () {
 {% endmacro %}
 
 
+table table-striped table-hoverable table-sm

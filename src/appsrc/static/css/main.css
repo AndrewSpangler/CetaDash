@@ -69,12 +69,24 @@ th.dt-no-padding {
 }
 
 div.dt-container .dt-search input {
-  padding: 2px;
+  padding: 0px;
+  margin-top: 0px;
+  outline: 0px;
+  margin-left: 0px;
+  margin-right: 0px;
+  height: 24px;
+  border: 1px solid #aaa;
 }
 
 div.dt-container select.dt-input {
-  padding: 2px;
-  margin-top: 1px;
+  padding: 0px;
+  margin-top: 0px;
+  outline: 0px;
+  border: none;
+  height: 24px;
+  margin-left: 1px;
+  margin-right: 1px;
+  border: 1px solid #aaa;
 }
 
 table.dataTable td.dt-type-date {

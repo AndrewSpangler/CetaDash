@@ -1,1 +1,0 @@
-from .wtf_script import WTFScript

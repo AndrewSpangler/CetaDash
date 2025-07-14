@@ -7,22 +7,22 @@
 form.hidden_tag()
 ~ (
   form.name
-    | string_field
-    | col("mt-0 mb-1")
+    | wtff.string_field
+    | bs.col("mt-0 mb-1")
   ~ form.description
-    | textarea_field
-    | col("mt-0 mb-1")
-) | row("mb-0")
+    | wtff.textarea_field
+    | bs.col("mt-0 mb-1")
+) | bs.row("mb-0")
 
 ~ form.details 
-  | md_field
-  | col("my-0")
-  | row
+  | mde.md_field
+  | bs.col("my-0")
+  | bs.row
 
 ~ form.content
-  | md_field
-  | col("my-0")
-  | row
+  | mde.md_field
+  | bs.col("my-0")
+  | bs.row
 }}
 </div>
 {% endautoescape %}

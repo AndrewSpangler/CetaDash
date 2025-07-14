@@ -14,3 +14,4 @@ sqlalchemy==1.4.45
 psutil
 pyyaml
 pymysql
+lxml

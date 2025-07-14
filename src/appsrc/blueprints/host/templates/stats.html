@@ -4,8 +4,8 @@
 
 {% block content %}
 {% autoescape false %}
-{{ container_start() }}
-{% set value_box = header_value_box({
+{{ cd.container_start() }}
+{% set value_box = cd.header_value_box({
   "Hostname" : info.hostname,
   "Boot Time" : pretty_date(info.boot_time),
   "Memory": (
@@ -13,7 +13,7 @@
     +"/"+format_bytes(info.memory.total)
   ),
 }) %}
-{{ container_header("Host Stats", value_boxes=[value_box]) }}
+{{ cd.container_header("Host Stats", value_boxes=[value_box]) }}
 <div class="card-body">
   {% set sections = {
   "host" : ("Host", "includes/host_card.html"),
@@ -24,6 +24,6 @@
   } %}
   {% include "includes/section_accordian.html" %}
 </div>
-{{ container_end() }}
+{{ cd.container_end() }}
 {% endautoescape %}
 {% endblock %}

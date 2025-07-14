@@ -3,69 +3,60 @@
 {% block form_content %}
 {% autoescape false %}
 {{ 
-(  
-  form.name
-    | string_field("Hourly sync, etc")
-    | col
-  ~ form.workflow
-    | dropdown_field
-    | col
-) | row
-
-~ (
-  form.details
-    | md_field
-    | col("mb-1")
-  ~ form.description
-    | textarea_field
-    | col("mb-1")
-) | row
+(
+  (
+    form.name
+      | wtff.string_field(placeholder="Hourly sync, etc"),
+    form.workflow
+      | wtff.dropdown_field
+  ) | jacc(bs.col),
+  (
+    form.details
+      | mde.md_field,
+    form.description
+      | wtff.textarea_field
+  ) | jacc(bs.col, classes="mb-1")
+) | jacc(bs.row)
 
 ~ hr()
 
-~ ( 
+~ (
   form.job_type
-    | dropdown_field
-    | col
-  ~ form.enabled
-    | toggle_field
-    | col
-) | row 
+    | wtff.dropdown_field,
+  form.enabled
+    | wtff.toggle_field,
+) | jacc(bs.col)
+  | bs.row
 
 ~ ( 
   form.day_of_week
-    | string_field("mon,wed,fri")
-    | col
-  ~ form.hour
-    | integer_field("0-23")
-    | col
-  ~ form.minute
-    | integer_field("0-59")
-    | col
-) | row(id="cron-fields")
+    | wtff.string_field(placeholder="mon,wed,fri"),
+  form.hour
+    | wtff.integer_field(placeholder="0-23"),
+  form.minute
+    | wtff.integer_field(placeholder="0-59"),
+) | jacc(bs.col)
+  | bs.row(id="cron-fields")
 
 ~ ( 
   form.hours
-    | integer_field
-    | col
-  ~ form.minutes
-    | integer_field
-    | col
-  ~ form.seconds
-    | integer_field
-    | col
-) | row(id="interval-fields") 
+    | wtff.integer_field,
+  form.minutes
+    | wtff.integer_field,
+  form.seconds
+    | wtff.integer_field
+) | jacc(bs.col)
+  | bs.row(id="interval-fields") 
 
 ~ hr()
 
 ~ ( 
   form.headers
-    | yaml_field
-    | col
-  ~ form.environment
-    | env_field
-    | col 
-) | row
+    | cm.yaml_field,
+  form.environment
+    | cm.env_field
+) | jacc(bs.col)
+  | bs.row
 }} 
 {% endautoescape %}
 {% endblock %}

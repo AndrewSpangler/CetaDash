@@ -1,0 +1,2 @@
+    {{ cd.section_end(id) | safe}}
+</div>
