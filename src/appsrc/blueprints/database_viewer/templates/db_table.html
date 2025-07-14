@@ -21,7 +21,7 @@
   {% set placeholder_text = "Search Table" %}
   {% set search_query = query %}
   {% set endpoint = url_for("database_viewer.view", database=database, table=table) %}
-  {% include "includes/search_bar.html" %}
+  {{ cd.search_bar() | safe }}
   <hr>
   {% include "includes/table_table.html" %}
 </div>

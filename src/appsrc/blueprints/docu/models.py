@@ -6,7 +6,6 @@ from flask_login import current_user
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.datastructures import ImmutableDict
 from ...main import db
-from ...modules.parsing import pretty_date, localize
 from ...models import User, BaseEditable, BaseEditLog, ACTION_ENUM
 
 class Document(BaseEditable):

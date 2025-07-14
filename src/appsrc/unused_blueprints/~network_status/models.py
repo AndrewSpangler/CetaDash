@@ -1,8 +1,7 @@
 import datetime
 import logging
 from werkzeug.datastructures import ImmutableDict
-from ...main import db
-from ...modules.parsing import localize, pretty_date
+from ...main import app, db
 from ...modules.settings_table import BaseSettingsTable
 
 class Range(db.Model):
@@ -15,10 +14,10 @@ class Range(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     @property
     def created_at_local(self):
-        return localize(self.created_at)
+        return app.wtf.localize(self.created_at)
     @property
     def created_at_pretty(self):
-        return pretty_date(self.created_at_local)
+        return app.wtf.pretty_date(self.created_at_local)
 
 class NetSetting(BaseSettingsTable):
     __tablename__ = "NetSetting"

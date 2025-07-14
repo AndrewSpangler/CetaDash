@@ -31,13 +31,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from werkzeug.datastructures import ImmutableDict
 from .modules.parsing import (
-    pretty_date,
-    get_tz_from_localization,
-    format_bytes,
     make_table_button,
     make_table_page,
-    pretty_from_timestamp,
-    from_rfc_timestamp,
     recursive_update
 )
 from .modules.task_manager import BackgroundTaskManager
@@ -127,10 +122,6 @@ Markdown(app)
 ### Add WTFScript to jinja templating
 wtf = WTFHtmlFlask(app, {
     "url_for" : url_for,
-    "format_bytes" : format_bytes,
-    "pretty_date": pretty_date,
-    "pretty_from_timestamp": pretty_from_timestamp,
-    "from_rfc_timestamp": from_rfc_timestamp,
 })
 macros_dir = os.path.join(os.path.dirname(__file__), "modules/WTFScript/macros/html/")
 # Load wtf modules
@@ -145,6 +136,7 @@ for d in [
 # load custom wtf module for CetaDash
 wtf.load_macros_dir(os.path.join(os.path.dirname(__file__), "templates/wtf"))
 app.wtf = wtf
+app.local_tz = app.wtf.get_tz_from_localization(timezone(app.config["TIMEZONE"]))
 ### Load plugins and config
 for k in (
     # "SQLALCHEMY_BINDS",
@@ -230,8 +222,6 @@ app.login_manager = login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
-### Used to set displayed timezones
-app.local_tz = timezone(app.config["TIMEZONE"])
 
 ### Make databases dir 
 os.makedirs("databases", exist_ok=True)
@@ -347,7 +337,6 @@ def provide_selection() -> dict:
         "nav_enabled": True,
         "PERMISSION_MAP": app.models.core.PERMISSION_MAP,
         "PERMISSION_ENUM": app.models.core.PERMISSION_ENUM,
-        "local_tz": get_tz_from_localization(app.local_tz),
         "make_table_button": make_table_button,
         "themes": BOOTSWATCH_THEMES,
         "selected_theme": selected_theme,
@@ -429,7 +418,7 @@ def background_tasks():
             return redirect(url_for("background_tasks"))
         flash(f"Task {task.name} Triggered successfully", "success")
         return redirect(url_for("background_tasks"))
-                
+
     rows = [
         (
             k,
@@ -441,8 +430,8 @@ def background_tasks():
                 classes=["bi", "bi-toggle-"+("on" if v.enabled else "off")],
             ),
             v.running,
-            pretty_date(localize(v.last_run)),
-            pretty_date(v.job.next_run_time),
+            app.wtf.pretty_date(app.wtf.localize(v.last_run)),
+            app.wtf.pretty_date(app.wtf.localize(v.job.next_run_time)),
             make_table_button(
                 " Trigger Task Run",
                 (('background_tasks',),dict(task=k, run_now=True)),

@@ -25,7 +25,6 @@ from ..models import (
 from ....modules.parsing import (
     make_table_button,
     make_table_icon_button,
-    pretty_date,
     make_table_page
 )
 
@@ -161,7 +160,7 @@ def index():
                 ),
                 container["Image"],
                 container["State"],
-                pretty_date(datetime.datetime.fromtimestamp(container["Created"])),
+                app.wtf.pretty_date(datetime.datetime.fromtimestamp(container["Created"])),
             )
             for container in containers  
         ],

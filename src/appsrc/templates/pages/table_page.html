@@ -1,4 +1,5 @@
 {% extends "pages/content_page.html" %}
+{% from "macros/sections.html" import data_table %}
 
 {% set title=(title or name) %}
 
@@ -10,7 +11,7 @@
 {% endfor %}
 {% endif %}
 {{ 
-    cd.data_table(name, columns, rows, custom_script, True)
+    data_table(name, columns, rows, custom_script, True)
     ~ cd.container_end()
 }}
 {% endautoescape %}

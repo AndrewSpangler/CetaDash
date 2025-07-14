@@ -14,8 +14,7 @@ from sqlalchemy import func as sqlfunc
 from sqlalchemy.ext.declarative import declared_attr
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.datastructures import ImmutableDict
-from .main import db
-from .modules.parsing import pretty_date, localize
+from .main import app, db
 
 
 SYSTEM_ID = 999 # ID For built-in system user
@@ -147,16 +146,16 @@ class BaseEditable(db.Model):
         return db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
     @property
     def created_at_local(self):
-        return localize(self.created_at)
+        return app.wtf.localize(self.created_at)
     @property
     def created_at_pretty(self):
-        return pretty_date(self.created_at_local)
+        return app.wtf.pretty_date(self.created_at_local)
     @property
     def edited_at_local(self):
-        return localize(self.edited_at)
+        return app.wtf.localize(self.edited_at)
     @property
     def edited_at_pretty(self):
-        return pretty_date(self.edited_at_local)
+        return app.wtf.pretty_date(self.edited_at_local)
     
     def log_edit(self, log_cls, user_id:int = None, action:int = ACTION_ENUM.MODIFY, **kw):
         return handle_log(log_cls, user_id, action=action, **kw)
@@ -183,7 +182,7 @@ class BaseLog(db.Model):
         return db.Column(db.Text)
     @property
     def timestamp_local(self):
-        return localize(self.timestamp)
+        return app.wtf.localize(self.timestamp)
     @property
     def timestamp_pretty(self):
         return pretty_date(self.timestamp_local)

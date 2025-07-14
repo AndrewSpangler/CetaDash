@@ -7,7 +7,6 @@ from sqlalchemy.ext.declarative import declared_attr
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.datastructures import ImmutableDict
 from ...main import db, app
-from ...modules.parsing import pretty_date, localize
 from ...models import (
     User,
     BaseEditable,

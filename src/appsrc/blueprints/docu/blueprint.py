@@ -14,7 +14,6 @@ from ...main import app, db
 from ...modules.parsing import (
     make_table_page,
     make_table_button,
-    make_search_bar,
     make_table_icon_button
 )
 from .models import db, Document, DocumentEditLog, init_db
@@ -50,13 +49,13 @@ def index():
 
     def make_document_link(doc:Document) -> str:
         return f"<a href='{url_for('docu.view', document_id=doc.id)}'>[{doc.id}]{doc.title}</a>"
-
-    search_bar = make_search_bar(
-        url_for('docu.index'),
+    
+    search_bar = app.wtf.cd.search_bar(
+        endpoint = url_for('docu.index'),
         search_query=search_query,
-        placeholder_text="Search by title / content."
+        placeholder="Search by title / content."
     )
-
+    
     new_button = make_table_button(
         "New Document",
         url_args=[["docu.create"], {}],

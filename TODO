@@ -1,5 +1,4 @@
 abstract viewer card
-move more macros to wtf templates
 move search bar to wtf(internal)
 
 Trigger logs store ran endpoint as string, save session id and put on logs page
@@ -14,9 +13,9 @@ HIGH PRIORITY:
 
 
  - add workspace logging to container runtime errors (leverage the existing message queue to also write to stdout with context)
+
  - add action buttons to container view page
  - add layered env to trigger handling
- - fix scheduled trigger workflow dropdown not updating properly
 
 GENERAL:
  - sort logs by timestamp (most recent first)
@@ -48,7 +47,6 @@ SCHEDULED TRIGGERS:
 
 
 JSDATATABLES:
- - move jsdatatable buttons to a dropdown
  - attribute-based table factory?
 
 
