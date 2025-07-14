@@ -2,11 +2,6 @@
 {% if not edit_box is defined %}{% set edit_box=True %}{% endif %}
 {% if not value_boxes is defined %}{% set value_boxes=[] %}{% endif %}
 
-{% from "macros/sections.html" import 
-  creator_editor_box,
-  with context
-%}
-
 {% macro view_page_header(obj, edit_box=True, value_boxes=[]) %}
 {% set actions=[] %}
 {% if edit_box %}
@@ -19,7 +14,7 @@
   float="left")]
 %}
 {% endif %}
-{% set value_box=creator_editor_box(obj) %}
+{% set value_box=cd.creator_editor_box(obj) %}
 {{ cd.container_header(
   obj.name,
   back_url,

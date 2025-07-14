@@ -310,8 +310,7 @@
   
   {% block scripts %}{% endblock %}
   {{ url_for('static', filename='js/main.js') | cd.script | safe }}
-  {% from "macros/sections.html" import make_base_table_script %}
-  {{ make_base_table_script() | script |safe }}
+  {{ cd.data_table_script_common() | script |safe }}
 </body>
 
 </html>

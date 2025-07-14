@@ -1,0 +1,28 @@
+<table 
+  class="table table-striped table-hoverable table-sm"
+  id="{{name}}_{% if custom_script %}customtable{% else %}table{% endif %}" width="100%"
+>
+  <thead>
+    <tr>
+      {% for col in columns %}
+      <th>{{ col | safe }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      {% for td in row %}
+      <td>{{td | safe}}</td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% if custom_script %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+ {{ cd.data_table_script(name, custom_script) | safe }}
+});
+</script>
+{% endif %}

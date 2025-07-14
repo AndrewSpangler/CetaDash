@@ -1,0 +1,29 @@
+{{ cd.section_card_start("edit-log", "Edit Logs", "my-3 mt-0") | safe }}
+<table class="table table-striped" id="edit_log_table" width="100%">
+  {{
+    (
+      "Edit ID",
+      "Edit Timestamp",
+      "Editor",
+      "Edit Action",
+    ) | jacc(th)
+      | tr
+      | thead
+      | safe
+  }}
+  <tbody>
+    {% for log in obj.edit_logs %}
+    {{
+      (
+        log_url_callback(log),
+        log.timestamp_pretty,
+        log.user.name,
+        app.models.docker.ACTION_ENUM._NAMES[log.action]
+      ) | jacc(td)
+        | tr
+        | safe
+    }}
+    {% endfor %}
+  </tbody>
+</table>
+{{ cd.section_card_end("edit-logs") | safe }}

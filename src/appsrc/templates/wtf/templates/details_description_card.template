@@ -1,0 +1,15 @@
+{{ cd.section_card_start("description", "About", "my-3 mt-0") | safe }}
+<div class="card-body markdown-content">
+  {% if obj.description %}
+  {{ obj.description | markdown }}
+  {% else %}
+  <center><p class="mt-2"><i>Description is empty.</i></p></center>
+  {% endif %}
+  <hr>
+  {% if obj.details %}
+  {{ obj.details | markdown }}
+  {% else %}
+  <center><p class="mt-2"><i>Details are empty.</i></p></center>
+  {% endif %}
+</div>
+{{ cd.section_card_end("description") | safe }}
