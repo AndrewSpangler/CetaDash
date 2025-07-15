@@ -266,22 +266,22 @@ class WorkflowTrigger(BaseEditable):
     headers = db.Column(db.Text, default=DEFAULT_HEADER_MAPPING)
     environment = db.Column(db.Text)
     workflow_id = db.Column(db.Integer, db.ForeignKey("Workflow.id"), nullable=False)
-    workflow = db.relationship("Workflow", backref="workflow_triggers")
+    workflow = db.relationship("Workflow", backref="triggers")
 
     def log_edit(self, user_id: int, action: int = ACTION_ENUM.MODIFY, **kw):
-        return super().log_edit(WorkflowTriggerEditLog, user_id, action=action, workflow_trigger_id=self.id, **kw)
+        return super().log_edit(WorkflowTriggerEditLog, user_id, action=action, trigger_id=self.id, **kw)
     
     def log_run(self, user_id: int, status: int = STATUS_ENUM.RUNNING, **kw):
-        return super().log_run(WorkflowTriggerRunLog, user_id, status=status, workflow_trigger_id=self.id, **kw)
+        return super().log_run(WorkflowTriggerRunLog, user_id, status=status, trigger_id=self.id, **kw)
 
 
 class WorkflowTriggerEditLog(BaseEditLog):
     __tablename__ = "WorkflowTriggerEditLog"
     __bind_key__ = "cetadash_db"
-    workflow_trigger_id = db.Column(db.Integer, db.ForeignKey('WorkflowTrigger.id'), nullable=False)
-    workflow_trigger = db.relationship(
+    trigger_id = db.Column(db.Integer, db.ForeignKey('WorkflowTrigger.id'), nullable=False)
+    trigger = db.relationship(
         "WorkflowTrigger",
-        foreign_keys=[workflow_trigger_id],
+        foreign_keys=[trigger_id],
         backref=backref("edit_logs", order_by="WorkflowTriggerEditLog.id.desc()")
     )
 
@@ -289,10 +289,10 @@ class WorkflowTriggerEditLog(BaseEditLog):
 class WorkflowTriggerRunLog(BaseActionLog):
     __tablename__ = "WorkflowTriggerRunLog"
     __bind_key__ = "cetadash_db"
-    workflow_trigger_id = db.Column(db.Integer, db.ForeignKey('WorkflowTrigger.id'), nullable=False)
-    workflow_trigger = db.relationship(
+    trigger_id = db.Column(db.Integer, db.ForeignKey('WorkflowTrigger.id'), nullable=False)
+    trigger = db.relationship(
         "WorkflowTrigger",
-        foreign_keys=[workflow_trigger_id],
+        foreign_keys=[trigger_id],
         backref=backref("run_logs", order_by="WorkflowTriggerRunLog.id.desc()")
     )
 

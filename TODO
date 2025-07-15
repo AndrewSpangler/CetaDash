@@ -1,3 +1,8 @@
+back button in changelog
+add action buttons to container view page
+
+add table page in cd binds with context 
+
 Trigger logs store ran endpoint as string, save session id and put on logs page
 add start and end times to run logs
 TRACK EDIT VERSIONS IN RUN LOGS
@@ -5,18 +10,13 @@ TRACK EDIT VERSIONS IN RUN LOGS
 HIGH PRIORITY:
  - add workspace logging to container runtime errors (leverage the existing message queue to also write to stdout with context)
 
- - add action buttons to container view page
-
 GENERAL:
  - run counts on tasks/triggers etc
  - docker page updates status / color periodically
- - Add delete button to documents / other places
  - add some dashboard tabs
- - back button in changelog
 
 MACROS:
  - move accordians to macros
- - move search bar to macros
  - make search bar standard option on table pages
 
 TRIGGERS:
@@ -37,6 +37,7 @@ SCHEDULED TRIGGERS:
 DOCU:
  - write docu
  - link docu to tasks/workflows/triggers
+ - Attach documents to other documents
 
 LONG TERM:
  - custom docker labels for cetadash
@@ -50,7 +51,6 @@ LONG TERM:
  - NETWORK SCANNER / UPTIME MONITOR
     - log scans
 
-
 figure out db-paginated tables for faster loads (see docu page?)
 loading message in tables?
 
@@ -59,9 +59,7 @@ COSMETIC:
  - per-user personal theme overrides from db
 
 
-abstract viewer card
 
-Attach documents to other documents
 
 
 

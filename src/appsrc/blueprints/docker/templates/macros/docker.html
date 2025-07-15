@@ -1,12 +1,35 @@
-{% macro scheduler_edit_log_link(log)
+{% macro scheduler_edit_log_link_from_schedule_edit_log(log)
 %}{{
   log.id
   | a(href=url_for("docker.scheduler.edits", trigger_id=log.schedule_trigger.id, log_id=log.id))
   | safe
 }}{% endmacro %}
 
+{% macro schedule_workflow_run_log_link_from_schedule_workflow_log(workflow_log)
+%}{{
+  workflow_log.id
+  | a(href=url_for(
+      "docker.triggers.logs",
+      trigger_id = workflow_log.schedule_trigger_log.schedule_trigger.id,
+      log_id = workflow_log.schedule_trigger_log.id,
+      _anchor ="workflow-log-" ~ workflow_log.id
+    ))
+  | safe
+}}{% endmacro %}
 
-{% macro scheduler_run_log_link(log)
+{% macro schedule_trigger_run_log_link_from_schedule_trigger_log(schedule_trigger_log)
+%}{{
+  schedule_trigger_log.id
+  | a(href=url_for(
+      "docker.scheduler.logs",
+      trigger_id=schedule_trigger_log.schedule_trigger.id,
+      log_id=schedule_trigger_log.id,
+      _anchor="trigger-log-" ~ schedule_trigger_log.id
+    ))
+  | safe
+}}{% endmacro %}
+
+{% macro scheduler_run_log_link_from_workflow_log(log)
 %}{{
   log.id
     | a(href=url_for(
@@ -19,6 +42,31 @@
     | safe
 }}{% endmacro %}
 
+
+{% macro trigger_run_log_link_from_trigger_log(trigger_log)
+%}{{
+  trigger_log.id
+  | a(href=url_for(
+      "docker.triggers.logs",
+      trigger_id=trigger_log.trigger_id,
+      log_id=trigger_log.id,
+      _anchor="trigger-log-" ~ trigger_log.id
+    ))
+  | safe
+}}{% endmacro %}
+  
+  
+{% macro workflow_run_log_link_from_workflow_log(workflow_log)
+%}{{
+  workflow_log.id
+  | a(href=url_for(
+      "docker.triggers.logs",
+      trigger_id = workflow_log.trigger_log.trigger_id,
+      log_id = workflow_log.trigger_log.id,
+      _anchor ="workflow-log-" ~ workflow_log.id
+    ))
+  | safe
+}}{% endmacro %}
 
 {% macro task_edit_log_link(log)
 %}{{
@@ -39,7 +87,7 @@
 {% macro trigger_edit_log_link(log)
 %}{{
   log.id
-  | a(href=url_for("docker.triggers.edits", trigger_id=log.workflow_trigger.id, log_id=log.id))
+  | a(href=url_for("docker.triggers.edits", trigger_id=log.trigger_id, log_id=log.id))
   | safe
 }}{% endmacro %}
 
@@ -49,7 +97,7 @@
   log.id
   | a(href=url_for(
       "docker.triggers.logs",
-      trigger_id=log.workflow_trigger_id,
+      trigger_id=log.trigger_id,
       log_id=log.id,
       _anchor="trigger-log-" ~ log.id
     ))
@@ -78,7 +126,7 @@
   workflow_log.id
   | a(href=url_for(
       "docker.triggers.logs",
-      trigger_id = workflow_log.trigger_log.workflow_trigger.id,
+      trigger_id = workflow_log.trigger_log.trigger_id,
       log_id = workflow_log.trigger_log.id,
       _anchor ="trigger-log-" ~ workflow_log.trigger_log.id
     ))
@@ -91,8 +139,8 @@
   workflow_log.id
   | a(href=url_for(
       "docker.triggers.logs",
-      trigger_id = workflow_log.trigger_log.workflow_trigger.id,
-      log_id = workflow_log.trigger_log.id,
+      trigger_id = workflow_log.trigger_log.trigger_id,
+      log_id = workflow_log.trigger_log_id,
       _anchor ="workflow-log-" ~ workflow_log.id
     ))
   | safe
@@ -104,7 +152,7 @@
   workflow_log.id
   | a(href=url_for(
       "docker.scheduler.logs",
-      trigger_id = workflow_log.schedule_trigger_log.schedule_trigger.id,
+      trigger_id = workflow_log.schedule_trigger_log.schedule_trigger_id,
       log_id = workflow_log.id,
       _anchor ="scheduler-log-" ~ workflow_log.id
     ))
@@ -117,7 +165,7 @@
   task_log.id
   | a(href=url_for(
       "docker.triggers.logs",
-      trigger_id = task_log.workflow_log.trigger_log.workflow_trigger.id,
+      trigger_id = task_log.workflow_log.trigger_log.trigger_id,
       log_id = task_log.workflow_log.trigger_log.id,
       _anchor ="task-log-" ~ task_log.id
     ))
@@ -130,8 +178,8 @@
   task_log.id
   | a(href=url_for(
       "docker.scheduler.logs",
-      trigger_id = task_log.workflow_log.schedule_trigger_log.schedule_trigger.id,
-      log_id = task_log.workflow_log.schedule_trigger_log.id,
+      trigger_id = task_log.workflow_log.schedule_trigger_log.schedule_trigger_id,
+      log_id = task_log.workflow_log.schedule_trigger_log_id,
       _anchor ="task-log-" ~ task_log.id
     ))
   | safe
@@ -175,7 +223,7 @@
         app.models.docker.STATUS_ENUM._NAMES[l.status],
         l.user.name,
         workflow_link(l.workflow_log.workflow),
-        trigger_link(l.workflow_log.trigger_log.workflow_trigger),
+        trigger_link(l.workflow_log.trigger_log.trigger),
         (
           "Trigger: " ~ trigger_run_log_link(l.workflow_log.trigger_log) 
           ~ "\nWorkflow: " ~ workflow_run_log_link(l.workflow_log)
@@ -241,7 +289,6 @@
       ) | acc(small) | jacc(td) | tr | safe
     }}
   {% endmacro %}
-  
   {{
     (
       (
@@ -250,7 +297,7 @@
         "Created",
         "Updated"
       ) | cd.table_head
-      ~ workflow.workflow_triggers
+      ~ workflow.triggers
         | jacc(trigger_row)
         | tbody
     ) | cd.table(id="workflow_triggers_" ~ workflow.id ~ "_table")
@@ -299,7 +346,7 @@
         workflow_link(l.workflow_log.workflow),
         schedule_trigger_link(l.workflow_log.schedule_trigger_log.schedule_trigger),
         (
-          "Schedule: " ~ scheduler_run_log_link(l.workflow_log)
+          "Schedule: " ~ scheduler_run_log_link_from_workflow_log(l.workflow_log)
           ~ "\nWorkflow: " ~ workflow_schedule_run_log_link(l.workflow_log)
         ) | pre()
       ) | acc(small) | jacc(td) | tr | safe
@@ -360,7 +407,7 @@
         l.timestamp_pretty,
         app.models.docker.STATUS_ENUM._NAMES[l.status],
         l.user.name,
-        trigger_link(l.trigger_log.workflow_trigger),
+        trigger_link(l.trigger_log.trigger),
         workflow_trigger_run_log_link(l),
         l.task_logs
           | jacc(workflow_task_run_log_link, " ")
@@ -395,7 +442,7 @@
         app.models.docker.STATUS_ENUM._NAMES[l.status],
         l.user.name,
         schedule_trigger_link(l.schedule_trigger_log.schedule_trigger),
-        scheduler_run_log_link(l),
+        scheduler_run_log_link_from_workflow_log(l),
         l.scheduled_task_logs
           | jacc(workflow_task_schedule_run_log_link, " "),
       ) | acc(small) | jacc(td) | tr | safe
@@ -418,7 +465,7 @@
       | safe
   }}
 {% endmacro %}
-
+  
 
 {% macro trigger_log_table(trigger) %}
   {% macro trigger_log_row(l) %}
@@ -429,8 +476,45 @@
         l.user.name,
         workflow_link(l.workflow_log.workflow),
         (
-          "Trigger: " ~ trigger_run_log_link(l) ~ "  "
-          ~ "\nWorkflow: " ~ workflow_run_log_link(l.workflow_log)
+          "Trigger: " ~ trigger_run_log_link_from_trigger_log(l) ~ "  "
+          ~ "\nWorkflow: " ~ workflow_run_log_link_from_workflow_log(l.workflow_log)
+        ) | pre
+      ) | acc(small) | jacc(td) | tr | safe
+    }}
+  {% endmacro %}
+  {{
+    (
+      (
+        "Timestamp",
+        "Status",
+        "User",
+        "Workflow",
+        "Logs"
+      ) | jacc(th)
+        | tr
+        | thead
+      ~ trigger.run_logs
+        | jacc(trigger_log_row)
+        | tbody
+    ) | cd.table(id="trigger_log_" ~ trigger.id ~ "_table",)
+      | safe
+  }}
+{% endmacro %}
+
+
+
+
+{% macro schedule_trigger_log_table(trigger) %}
+  {% macro trigger_log_row(l) %}
+    {{
+      (
+        l.timestamp_pretty,
+        models.docker.STATUS_ENUM._NAMES[l.status],
+        l.user.name,
+        workflow_link(l.workflow_log.workflow),
+        (
+          "Trigger: " ~ schedule_trigger_run_log_link_from_schedule_trigger_log(l) ~ "  "
+          ~ "\nWorkflow: " ~ schedule_workflow_run_log_link_from_schedule_workflow_log(l.workflow_log)
         ) | pre
       ) | acc(small) | jacc(td) | tr | safe
     }}

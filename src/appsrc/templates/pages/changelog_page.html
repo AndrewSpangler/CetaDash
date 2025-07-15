@@ -3,13 +3,16 @@
 {% block card_content %}
 {% autoescape false %}
 {{
+  back_text | cd.back_link(back)
+  ~ br()
+}}
+{{
 (edit_log.message or "NO LOG CONTENT")
   | replace("\n", "<br>")
   | replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
   | replace(" ", "&nbsp;")
   | bs.col("font-monospace")
   | bs.row
-
 }}
 {% endautoescape %}
 {% endblock %}

@@ -15,7 +15,7 @@
   else "Scheduled Trigger"
 ) %}
 {% set trigger = (
-  log.workflow_trigger
+  log.trigger
   if trigger_type == "Trigger"
   else log.schedule_trigger
 ) %}
@@ -87,7 +87,7 @@
               trigger_link(trigger)
               ~ br()
               ~ (
-                ("<i> on </i>" ~ log.workflow_trigger.endpoint)
+                ("<i> on </i>" ~ log.trigger.endpoint)
                 if trigger_type == "Trigger"
                 else ""
               )

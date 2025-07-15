@@ -259,7 +259,9 @@ def edits(trigger_id, log_id):
 
     return render_template(
         'scheduler/changelog.html',
-        edit_log=edit_log
+        edit_log=edit_log,
+        back = url_for("docker.scheduler.view", trigger_id=trigger_id),
+        back_text = "Back to Trigger "+trigger_id
     )
 
 

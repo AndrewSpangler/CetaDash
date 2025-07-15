@@ -1,6 +1,6 @@
 {% from "macros/docker.html" import 
-  trigger_log_table,
-  scheduler_edit_log_link
+  scheduler_edit_log_link_from_schedule_edit_log,
+  schedule_trigger_log_table
   with context
 %}
 
@@ -13,7 +13,7 @@
 {% set edit_button_url = "docker.scheduler.edit" %}
 {% set edit_button_args = {"trigger_id":trigger.id} %}
 
-{% set log_url_callback = scheduler_edit_log_link %}
+{% set log_url_callback = scheduler_edit_log_link_from_schedule_edit_log %}
 
 {% extends "pages/editable_page.html" %}
 
@@ -114,7 +114,7 @@
 
 ) | cd.section_card("config", "Configuration")
 
-~ trigger_log_table(trigger)
+~ schedule_trigger_log_table(trigger)
   | cd.section_card("trigger-log", "Run Logs")
 }}
 {% endautoescape %}

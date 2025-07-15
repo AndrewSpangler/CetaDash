@@ -192,7 +192,7 @@ def edits(trigger_id, log_id):
     trigger = WorkflowTrigger.query.get_or_404(trigger_id) 
     edit_log = WorkflowTriggerEditLog.query.get_or_404(log_id)
 
-    if not trigger.id == edit_log.workflow_trigger.id:
+    if not trigger.id == edit_log.trigger.id:
         raise ValueError("Trigger and edit log do not match")
 
     return render_template(
@@ -206,7 +206,7 @@ def edits(trigger_id, log_id):
 def logs(trigger_id, log_id):
     trigger = WorkflowTrigger.query.get_or_404(trigger_id) 
     run_log = WorkflowTriggerRunLog.query.get_or_404(log_id)
-    if not trigger.id == run_log.workflow_trigger.id:
+    if not trigger.id == run_log.trigger.id:
         raise ValueError("Trigger and edit log do not match")
     return render_template('pages/log_stack_page.html', log=run_log)
 
