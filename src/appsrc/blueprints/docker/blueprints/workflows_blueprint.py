@@ -52,25 +52,31 @@ def index():
             "Creator",
             "Updated",
             "Editor",
-            "Actions", 
         ],
         rows = [
             (
-                f"""<a href="{url_for('docker.workflows.view', workflow_id=workflow.id)}">[{workflow.id}] {workflow.name}</a>""",
+                app.wtf.span(
+                    f"<a href=\"{url_for('docker.workflows.view', workflow_id=workflow.id)}\">[{workflow.id}] {workflow.name}</a>"
+                    + app.wtf.br() + app.wtf.span(
+                        make_table_icon_button(
+                            ((f'docker.workflows.edit',),{'workflow_id':workflow.id}),
+                            classes=[f"bi-pencil"],
+                            tooltip='Edit Workflow',
+                            method="GET"
+                        ) + make_table_icon_button(
+                            ((f'docker.workflows.delete',),{'workflow_id':workflow.id}),
+                            classes=[f"bi-trash"],
+                            tooltip='Delete Workflow'
+                        ),
+                        style="display: inline-block;",
+                        classes="float-right"
+                    ),
+                    classes="d-flex justify-content-between"
+                ),
                 workflow.created_at_pretty,
                 workflow.creator.name,
                 workflow.edited_at_pretty,
                 workflow.last_editor.name,
-                make_table_icon_button(
-                    ((f'docker.workflows.edit',),{'workflow_id':workflow.id}),
-                    classes=[f"bi-pencil"],
-                    tooltip='Edit Workflow',
-                    method="GET"
-                ) + make_table_icon_button(
-                    ((f'docker.workflows.delete',),{'workflow_id':workflow.id}),
-                    classes=[f"bi-trash"],
-                    tooltip='Delete Workflow'
-                )
             )
             for workflow in workflows 
         ],

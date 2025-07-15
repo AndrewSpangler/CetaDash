@@ -94,7 +94,11 @@ class WorkflowTaskRunLog(BaseActionLog):
     __tablename__ = "WorkflowTaskRunLog"
     __bind_key__ = "cetadash_db"
     task_id = db.Column(db.Integer, db.ForeignKey('WorkflowTask.id'), nullable=False)
-    task = db.relationship("WorkflowTask", foreign_keys=[task_id], backref="run_logs")
+    task = db.relationship(
+        "WorkflowTask",
+        foreign_keys=[task_id], 
+        backref=backref("run_logs", order_by="WorkflowTaskRunLog.id.desc()")
+    )
     workflow_log_id = db.Column(db.Integer, db.ForeignKey('WorkflowRunLog.id'), nullable=False)
     workflow_log = db.relationship(
         "WorkflowRunLog",

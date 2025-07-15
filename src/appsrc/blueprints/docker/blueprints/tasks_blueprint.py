@@ -51,26 +51,32 @@ def index():
             "Created",
             "Creator",
             "Updated",
-            "Editor",
-            "Actions", 
+            "Editor" 
         ],
         rows = [
             (
-                f"""<a href="{url_for('docker.tasks.view', task_id=task.id)}">[{task.id}] {task.name}</a>""",
+                app.wtf.span(
+                    f"""<a href="{url_for('docker.tasks.view', task_id=task.id)}">[{task.id}] {task.name}</a>"""
+                    + app.wtf.br() + app.wtf.span(
+                        make_table_icon_button(
+                            ((f'docker.tasks.edit',),{'task_id':task.id}),
+                            classes=[f"bi-pencil"],
+                            tooltip='Edit Task',
+                            method="GET"
+                        ) + make_table_icon_button(
+                            ((f'docker.tasks.delete',),{'task_id':task.id}),
+                            classes=[f"bi-trash"],
+                            tooltip='Delete Task'
+                        ),
+                        style="display: inline-block;",
+                        classes="float-right"
+                    ),
+                    classes="d-flex justify-content-between"
+                ),
                 task.created_at_pretty,
                 task.creator.name,
                 task.edited_at_pretty,
-                task.last_editor.name,
-                make_table_icon_button(
-                    ((f'docker.tasks.edit',),{'task_id':task.id}),
-                    classes=[f"bi-pencil"],
-                    tooltip='Edit Task',
-                    method="GET"
-                ) + make_table_icon_button(
-                    ((f'docker.tasks.delete',),{'task_id':task.id}),
-                    classes=[f"bi-trash"],
-                    tooltip='Delete Task'
-                )
+                task.last_editor.name
             )
             for task in tasks 
         ],

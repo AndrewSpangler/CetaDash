@@ -59,33 +59,39 @@ def index():
             "Created",
             "Creator",
             "Updated",
-            "Editor",
-            "Actions", 
+            "Editor" 
         ],
         rows = [
             (
-                f"""<a href="{url_for('docker.triggers.view', trigger_id=trigger.id)}">[{trigger.id}] {trigger.name}</a>""",
+                app.wtf.span(
+                    f"<a href=\"{url_for('docker.triggers.view', trigger_id=trigger.id)}\">[{trigger.id}] {trigger.name}</a>"
+                    + app.wtf.br() + app.wtf.span(
+                        make_table_icon_button(
+                            ((f'',),{}),
+                            classes=[f"bi-play"],
+                            on_click=f"openIframeModal(`Running Trigger {trigger.name}`, '{url_for('docker.triggers.actionframe', trigger_id=trigger.id)}')",
+                            do_action=False,
+                            tooltip='Run Trigger'
+                        ) + make_table_icon_button(
+                            ((f'docker.triggers.edit',),{'trigger_id':trigger.id}),
+                            classes=[f"bi-pencil"],
+                            tooltip='Edit Trigger',
+                            method="GET"
+                        ) + make_table_icon_button(
+                            ((f'docker.triggers.delete',),{'trigger_id':trigger.id}),
+                            classes=[f"bi-trash"],
+                            tooltip='Delete Trigger'
+                        ),
+                        style="display: inline-block;",
+                        classes="float-right"
+                    ),
+                    classes="d-flex justify-content-between"
+                ),
                 f"""<a href="{url_for('docker.triggers.activate', trigger_id=trigger.id)}">{trigger.endpoint}</a>""",
                 trigger.created_at_pretty,
                 trigger.creator.name,
                 trigger.edited_at_pretty,
                 trigger.last_editor.name,
-                make_table_icon_button(
-                    ((f'',),{}),
-                    classes=[f"bi-play"],
-                    on_click=f"openIframeModal(`Running Trigger {trigger.name}`, '{url_for('docker.triggers.actionframe', trigger_id=trigger.id)}')",
-                    do_action=False,
-                    tooltip='Run Trigger'
-                ) + make_table_icon_button(
-                    ((f'docker.triggers.edit',),{'trigger_id':trigger.id}),
-                    classes=[f"bi-pencil"],
-                    tooltip='Edit Trigger',
-                    method="GET"
-                ) + make_table_icon_button(
-                    ((f'docker.triggers.delete',),{'trigger_id':trigger.id}),
-                    classes=[f"bi-trash"],
-                    tooltip='Delete Trigger'
-                )
             )
             for trigger in triggers 
         ],

@@ -133,35 +133,42 @@ def index():
             "Created",
         ],
         rows = [
-            (
-                f"<b><a href='{url_for('docker.containers.view', container_id=container['Id'])}'>"+container["Names"][0].strip("/")+"</a></b>"
-                + "<br>" + make_table_icon_button(
-                    ((f'',),{}),
-                    btn_type="transparent",
-                    classes=["bi-list-columns-reverse"],
-                    on_click=f"openIframeModal('Logs for {container['Names'][0].strip('/')}: {container['Image']}', '{url_for('docker.containers.logsframe', container_id=container['Id'])}')",
-                    do_action=False,
-                    tooltip='View Logs'
-                ) + "".join(
-                    make_table_icon_button(
-                        ((f'',),{}),
-                        btn_type="transparent",
-                        classes=[f"bi-{icon}"],
-                        on_click=(
-                            f"if (confirm('Are you sure you want to run \\'{text}\\' on container {container['Names'][0]}?')) "
-                            f"openIframeModal('Task {' '.join(action.split('_')).capitalize()} | {container['Names'][0]}: {container['Image']}', "
-                            f"'{url_for('docker.containers.actionframe', container_id=container['Id'],action=action)}')"
+                (
+                    app.wtf.span(
+                        f"<a href=\'{url_for('docker.containers.view', container_id=container['Id'])}\'>"+container["Names"][0].strip("/")
+                        + app.wtf.br() + app.wtf.span(
+                            make_table_icon_button(
+                                ((f'',),{}),
+                                btn_type="transparent",
+                                classes=["bi-list-columns-reverse"],
+                                on_click=f"openIframeModal('Logs for {container['Names'][0].strip('/')}: {container['Image']}', '{url_for('docker.containers.logsframe', container_id=container['Id'])}')",
+                                do_action=False,
+                                tooltip='View Logs'
+                            ) + "".join(
+                                make_table_icon_button(
+                                    ((f'',),{}),
+                                    btn_type="transparent",
+                                    classes=[f"bi-{icon}"],
+                                    on_click=(
+                                        f"if (confirm('Are you sure you want to run \\'{text}\\' on container {container['Names'][0]}?')) "
+                                        f"openIframeModal('Task {' '.join(action.split('_')).capitalize()} | {container['Names'][0]}: {container['Image']}', "
+                                        f"'{url_for('docker.containers.actionframe', container_id=container['Id'],action=action)}')"
+                                    ),
+                                    do_action=False,
+                                    tooltip=text
+                                )
+                                for action, (text, icon) 
+                                in container_actions.items()
+                            ),
+                            style="display: inline-block;",
+                            classes="float-right"
                         ),
-                        do_action=False,
-                        tooltip=text
-                    )
-                    for action, (text, icon) 
-                    in container_actions.items()
-                ),
-                container["Image"],
-                container["State"],
-                app.wtf.pretty_date(datetime.datetime.fromtimestamp(container["Created"])),
-            )
+                        classes="d-flex justify-content-between"
+                    ),
+                    container["Image"],
+                    container["State"],
+                    app.wtf.pretty_date(datetime.datetime.fromtimestamp(container["Created"])),
+                )
             for container in containers  
         ],
         custom_script = """

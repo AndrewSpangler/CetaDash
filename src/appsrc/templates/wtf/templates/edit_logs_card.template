@@ -19,7 +19,8 @@
         log.timestamp_pretty,
         log.user.name,
         models.docker.ACTION_ENUM._NAMES[log.action]
-      ) | jacc(td)
+      ) | acc(small)
+        | jacc(td)
         | tr
         | safe
     }}

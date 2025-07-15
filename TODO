@@ -1,9 +1,6 @@
-
-
 Trigger logs store ran endpoint as string, save session id and put on logs page
 add start and end times to run logs
 TRACK EDIT VERSIONS IN RUN LOGS
-
 
 HIGH PRIORITY:
  - add workspace logging to container runtime errors (leverage the existing message queue to also write to stdout with context)
@@ -36,9 +33,6 @@ SCHEDULED TRIGGERS:
  - run on launch or delayed
  - store info on tasks that were scheduled but haven't run yet for future runs
  - add box similar to container status for trigger status
-
-
-
 
 DOCU:
  - write docu

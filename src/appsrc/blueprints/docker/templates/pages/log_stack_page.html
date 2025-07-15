@@ -128,7 +128,8 @@
                   log.workflow_log.task_logs
                   if isinstance(log.workflow_log, app.models.docker.WorkflowRunLog)
                   else log.workflow_log.scheduled_task_logs
-                ) | enumerate
+                ) | reversed
+                  | enumerate
                   | jacc(task_log_info)
                   | bs.row("justify-content-around")
             ) | bs.card_body("mt-0 pt-0 mb-0")
@@ -149,7 +150,8 @@
             log.workflow_log.task_logs
             if isinstance(log.workflow_log, app.models.docker.WorkflowRunLog)
             else log.workflow_log.scheduled_task_logs
-          ) | acc(log_section, type="task")
+          ) | reversed
+            | acc(log_section, type="task")
             | jacc(bs.col)
 
       ) | cd.section_card("logs", "Logs")
