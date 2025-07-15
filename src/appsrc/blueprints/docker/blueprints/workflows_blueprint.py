@@ -209,8 +209,9 @@ def edits(workflow_id, log_id):
 
     return render_template(
         'workflow/changelog.html',
-        workflow=workflow,
-        edit_log=edit_log
+        edit_log=edit_log,
+        back = url_for("docker.workflows.view", workflow_id=workflow_id),
+        back_text = "Back to Workflow "+workflow_id
     )
 
 

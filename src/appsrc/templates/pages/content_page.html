@@ -1,12 +1,19 @@
 {% extends "core.html" %}
 
 {% if not header_elements is defined %}{% set header_elements=None %}{% endif %}
+{% if not back is defined %}{% set back="" %}{% endif %}
+{% if not back_text is defined %}{% set back_text="" %}{% endif %}
 
 {% block content %}
 {% autoescape false %}
 {{ 
   cd.container_start() 
-  ~ cd.container_header(title, header_elements=header_elements)
+  ~ cd.container_header(
+    title,
+    header_elements=header_elements,
+    back=back,
+    back_text=back_text
+  )
   | safe
 }}
 <div class="card-body">

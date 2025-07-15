@@ -5,7 +5,7 @@
 %}
 
 {% set obj = trigger %}
-{% set back_url = "docker.scheduler.index" %}
+{% set back_url = url_for("docker.scheduler.index") %}
 {% set back_text = "Back to Scheduled Triggers" %}
 {% set page_title = trigger.name %}
 {% set title = "View Scheduled Trigger" %}
@@ -59,7 +59,7 @@
   {% if trigger.enabled %}
   {{ "Enabled" | bs.badge(classes="bg-success") | safe }}
   {% else %}
-  {{ "Disabled" | bs.badge(classes="danger") | safe }}
+  {{ "Disabled" | bs.badge(classes="bg-danger") | safe }}
   {% endif %}
 {% endmacro %}
 

@@ -169,6 +169,7 @@ def edits(document_id, log_id):
 
     return render_template(
         'docu/changelog.html',
-        document=document,
-        edit_log=edit_log
+        edit_log=edit_log,
+        back = url_for("docu.view", document_id=document.id),
+        back_text = "Back to Document "+document.name
     )

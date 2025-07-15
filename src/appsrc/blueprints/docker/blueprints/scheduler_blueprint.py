@@ -59,32 +59,37 @@ def index():
         title = "Scheduled Triggers",
         columns = [
             "[ID] Name",
+            "Status",
+            "Actions",
             "Created",
             "Creator",
             "Updated",
             "Editor",
         ],
-        rows = [
+        rows = [ 
             (
-                app.wtf.span(
-                    f"""<a href="{url_for('docker.scheduler.view', trigger_id=trigger.id)}">[{trigger.id}] {trigger.name}</a>"""
-                    + app.wtf.span(
-                        make_table_icon_button(
-                            ((f'docker.scheduler.edit',),{'trigger_id':trigger.id}),
-                            classes=[f"bi-pencil"],
-                            tooltip='Edit Trigger',
-                            float="right",
-                            method="GET"
-                        ) + make_table_icon_button(
-                            ((f'docker.scheduler.delete',),{'trigger_id':trigger.id}),
-                            classes=[f"bi-trash"],
-                            tooltip='Delete Trigger',
-                            float="right"
-                        ),
-                        style="display: inline-block;",
-                        classes="float-right"
-                    ),
-                    classes="d-flex justify-content-between"
+                app.wtf.a(
+                    f"[{trigger.id}] {trigger.name}",
+                    href=url_for('docker.scheduler.view', trigger_id=trigger.id)
+                ),
+                app.wtf.bs.badge(
+                    ["Disabled","Enabled"][trigger.enabled],
+                    classes="badge-pill "+["bg-danger", "bg-success"][trigger.enabled]
+                ),
+                make_table_icon_button(
+                    ((f'docker.scheduler.toggle_trigger',),{'trigger_id':trigger.id}),
+                    classes=[["bi-toggle-off", "bi-toggle-on"][trigger.enabled]],
+                    tooltip='Toggle Trigger',
+                    method="POST"
+                ) + make_table_icon_button(
+                    ((f'docker.scheduler.edit',),{'trigger_id':trigger.id}),
+                    classes=["bi-pencil"],
+                    tooltip='Edit Trigger',
+                    method="GET"
+                ) + make_table_icon_button(
+                    ((f'docker.scheduler.delete',),{'trigger_id':trigger.id}),
+                    classes=["bi-trash"],
+                    tooltip='Delete Trigger',
                 ),
                 trigger.created_at_pretty,
                 trigger.creator.name,
@@ -155,7 +160,15 @@ groups: admins"""
         tlog = trigger.log_edit(current_user.id, ACTION_ENUM.CREATE)
         db.session.commit()
 
-        flash("Scheduled Trigger created successfully!", "success")
+        if trigger.enabled:
+            try:
+                app.docker_scheduler.add_schedule_trigger(trigger)
+                flash("Scheduled Trigger created and added to scheduler successfully!", "success")
+            except Exception as e:
+                flash(f"Scheduled Trigger created but failed to add to scheduler: {str(e)}", "warning")
+        else:
+            flash("Scheduled Trigger created successfully (disabled)!", "success")
+
         return redirect(url_for("docker.scheduler.view", trigger_id=trigger.id))
 
     return render_template("scheduler/new.html", object_type="Workflow Task", form=form)
@@ -171,8 +184,35 @@ def reload_scheduler():
 @blueprint.route('/status', methods=['GET'])
 @app.permission_required(app.models.core.PERMISSION_ENUM.ADMIN)
 def stat_scheduler():
-    result = app.docker_scheduler.get_reload_status()
-    return jsonify(result)
+    """Get detailed scheduler status"""
+    try:
+        result = app.docker_scheduler.get_reload_status()
+        
+        # Add trigger details
+        triggers = ScheduleTrigger.query.all()
+        trigger_details = []
+        
+        for trigger in triggers:
+            job_info = app.docker_scheduler.get_job_info(trigger.id)
+            trigger_details.append({
+                'id': trigger.id,
+                'name': trigger.name,
+                'enabled': trigger.enabled,
+                'job_type': trigger.job_type,
+                'workflow_name': trigger.workflow.name,
+                'scheduled': job_info is not None,
+                'next_run': job_info.get('next_run_time') if job_info else None,
+                'schedule_string': trigger.schedule_string
+            })
+        
+        result['trigger_details'] = trigger_details
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'scheduler_running': False
+        }), 500
 
 
 @blueprint.route('/scheduler/<trigger_id>/edit', methods=['GET', 'POST'])
@@ -183,55 +223,66 @@ def edit(trigger_id):
     form.workflow.query_factory = lambda: Workflow.query.order_by(Workflow.name).all()
 
     before = {
-        "name" : trigger.name,
-        "description" : trigger.description,
-        "details" : trigger.details,
-        "workflow_id" : trigger.workflow_id,
-        "last_editor_id" : trigger.last_editor_id,
-        "edited_at" : trigger.edited_at,
-        "headers" : trigger.headers,
-        "environment" : trigger.environment,
-        "job_type" : trigger.job_type,
-        "day_of_week" : trigger.day_of_week,
-        "hour" : trigger.hour,
-        "minute" : trigger.minute,
-        "hours" : trigger.hours,
-        "minutes" : trigger.minutes,
-        "seconds" : trigger.seconds,
-        "enabled" : trigger.enabled,
+        "name": trigger.name,
+        "description": trigger.description,
+        "details": trigger.details,
+        "workflow_id": trigger.workflow_id,
+        "last_editor_id": trigger.last_editor_id,
+        "edited_at": trigger.edited_at,
+        "headers": trigger.headers,
+        "environment": trigger.environment,
+        "job_type": trigger.job_type,
+        "day_of_week": trigger.day_of_week,
+        "hour": trigger.hour,
+        "minute": trigger.minute,
+        "hours": trigger.hours,
+        "minutes": trigger.minutes,
+        "seconds": trigger.seconds,
+        "enabled": trigger.enabled,
     }
 
     if request.method == 'POST' and form.validate_on_submit():
         workflow = form.workflow.data
         after = {
-            "name" : form.name.data,
-            "description" : form.description.data,
-            "details" : form.details.data,
-            "workflow_id" : form.workflow.data.id,
-            "last_editor_id" : current_user.id,
-            "edited_at" : datetime.datetime.utcnow(),
-            "headers" : form.headers.data,
-            "environment" : form.environment.data,
-            "job_type" : form.job_type.data,
-            "day_of_week" : form.day_of_week.data,
-            "hour" : form.hour.data,
-            "minute" : form.minute.data,
-            "hours" : form.hours.data,
-            "minutes" : form.minutes.data,
-            "seconds" : form.seconds.data,
-            "enabled" : form.enabled.data,
+            "name": form.name.data,
+            "description": form.description.data,
+            "details": form.details.data,
+            "workflow_id": form.workflow.data.id,
+            "last_editor_id": current_user.id,
+            "edited_at": datetime.datetime.utcnow(),
+            "headers": form.headers.data,
+            "environment": form.environment.data,
+            "job_type": form.job_type.data,
+            "day_of_week": form.day_of_week.data,
+            "hour": form.hour.data,
+            "minute": form.minute.data,
+            "hours": form.hours.data,
+            "minutes": form.minutes.data,
+            "seconds": form.seconds.data,
+            "enabled": form.enabled.data,
         }
+
+        # FIX: Store the old enabled state before updating
+        was_enabled = trigger.enabled
 
         for k, v in after.items():
             setattr(trigger, k, v)
+        
         changes = app.models.core.make_changelog(before, after)
         trigger.log_edit(
             current_user.id,
             ACTION_ENUM.MODIFY,
-            message = changes
+            message=changes
         )
         db.session.commit()
-        flash('Scheduled Trigger updated successfully!', 'success')
+
+        # FIX: Update the scheduler with the new trigger configuration
+        try:
+            app.docker_scheduler.update_trigger(trigger)
+            flash('Scheduled Trigger updated successfully!', 'success')
+        except Exception as e:
+            flash(f'Scheduled Trigger updated in database but failed to update scheduler: {str(e)}', 'warning')
+
         return redirect(url_for('docker.scheduler.view', trigger_id=trigger_id))
 
     before.pop("last_editor_id")
@@ -261,7 +312,7 @@ def edits(trigger_id, log_id):
         'scheduler/changelog.html',
         edit_log=edit_log,
         back = url_for("docker.scheduler.view", trigger_id=trigger_id),
-        back_text = "Back to Trigger "+trigger_id
+        back_text = "Back to Scheduler "+trigger_id
     )
 
 
@@ -277,22 +328,64 @@ def logs(trigger_id, log_id):
 
 @blueprint.route('/scheduler/<trigger_id>/delete', methods=['POST'])
 @app.permission_required(app.models.core.PERMISSION_ENUM.ADMIN)
-def delete(trigger_id:int) -> str:
+def delete(trigger_id: int) -> str:
     trigger = ScheduleTrigger.query.get_or_404(trigger_id)
+    
+    # FIX: Remove from scheduler before deleting from database
+    try:
+        app.docker_scheduler.remove_trigger(trigger.id)
+    except Exception as e:
+        flash(f'Warning: Failed to remove trigger from scheduler: {str(e)}', 'warning')
+    
     db.session.delete(trigger)
     db.session.commit()
+    
     flash('Trigger deleted successfully!', 'success')
     return redirect(url_for('docker.scheduler.index'))
 
 
+@blueprint.route('/scheduler/<trigger_id>/update', methods=['POST'])
+@app.permission_required(app.models.core.PERMISSION_ENUM.ADMIN)
+def update_scheduler_trigger(trigger_id):
+    """Manually update a specific trigger in the scheduler"""
+    trigger = ScheduleTrigger.query.get_or_404(trigger_id)
+    try:
+        app.docker_scheduler.update_trigger(trigger)
+        return jsonify({
+            'success': True,
+            'message': f'Trigger {trigger.name} updated in scheduler successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Failed to update trigger in scheduler: {str(e)}'
+        }), 500
 
 
-
-
-
-
-
-# @blueprint.route('/trigger/<trigger_id>/actionframe', methods=['GET', 'POST'])
-# @app.permission_required(app.models.core.PERMISSION_ENUM.ADMIN)
-# def actionframe(trigger_id):
-#     return render_template("pages/stream_frame.html", stream_url=url_for("docker.triggers.activate", trigger_id=trigger_id))
+@blueprint.route('/scheduler/<trigger_id>/toggle', methods=['POST'])
+@app.permission_required(app.models.core.PERMISSION_ENUM.ADMIN)
+def toggle_trigger(trigger_id):
+    """Enable or disable a trigger"""
+    trigger = ScheduleTrigger.query.get_or_404(trigger_id)
+    
+    # Toggle the enabled state
+    trigger.enabled = not trigger.enabled
+    trigger.last_editor_id = current_user.id
+    trigger.edited_at = datetime.datetime.utcnow()
+    
+    # Log the change
+    action = ACTION_ENUM.MODIFY
+    message = f"Trigger {'enabled' if trigger.enabled else 'disabled'} by {current_user.name}"
+    trigger.log_edit(current_user.id, action, message=message)
+    
+    db.session.commit()
+    
+    # Update the scheduler
+    try:
+        app.docker_scheduler.update_trigger(trigger)
+        status = 'enabled' if trigger.enabled else 'disabled'
+        flash(f'Trigger {status} successfully!', 'success')
+    except Exception as e:
+        flash(f'Trigger updated in database but failed to update scheduler: {str(e)}', 'warning')
+    
+    return redirect(url_for('docker.scheduler.index'))

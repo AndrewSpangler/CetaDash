@@ -15,7 +15,15 @@ def activate_trigger(trigger_id):
     with app.app_context():
         result_queue = queue.Queue()
         trigger = ScheduleTrigger.query.get(trigger_id)
+        if not trigger:
+            logging.error(f"Trigger {trigger_id} not found")
+            return
+        
         workflow = Workflow.query.get(trigger.workflow_id)
+        if not workflow:
+            logging.error(f"Workflow {trigger.workflow_id} not found for trigger {trigger_id}")
+            return
+            
         tasks = [
             assoc.task for assoc in 
             workflow.task_associations.order_by(
@@ -27,9 +35,9 @@ def activate_trigger(trigger_id):
             args=(SYSTEM_ID, trigger, {}, workflow, tasks, result_queue, True),
             daemon=False
         )
-    thread.start()
-    thread.join()
-    return
+        thread.start()
+        thread.join()
+        return
 
 
 class WorkflowScheduler:
@@ -38,7 +46,7 @@ class WorkflowScheduler:
     def __init__(self, app):
         self.app = app
         self.scheduler = None
-        self.logger = logging
+        self.logger = logging.getLogger(__name__)
         
         db_url = app.config.get('SQLALCHEMY_BINDS', {}).get('cetadash_db')
         if not db_url:
@@ -72,8 +80,12 @@ class WorkflowScheduler:
         
         job_id = f"trigger_{trigger.id}"
 
-        if self.scheduler.get_job(job_id):
-            self.scheduler.remove_job(job_id)
+        # Remove existing job if it exists
+        try:
+            if self.scheduler.get_job(job_id):
+                self.scheduler.remove_job(job_id)
+        except Exception as e:
+            self.logger.warning(f"Error removing existing job {job_id}: {e}")
         
         try:
             if trigger.job_type == "cron":
@@ -88,19 +100,22 @@ class WorkflowScheduler:
             
         except Exception as e:
             import traceback
-            print(traceback.print_exception(e))
             self.logger.error(f"Failed to add trigger {trigger.id}: {str(e)}")
+            traceback.print_exc()
     
     def _add_cron_job(self, trigger, job_id):
         """Add a cron-based scheduled job"""
         cron_kwargs = {}
         
-        if trigger.day_of_week is not None and not "":
+        # Fix: Handle empty strings and None values properly
+        if trigger.day_of_week is not None and trigger.day_of_week.strip():
             cron_kwargs['day_of_week'] = trigger.day_of_week
-        if trigger.hour is not None and not "":
+        if trigger.hour is not None and str(trigger.hour).strip():
             cron_kwargs['hour'] = trigger.hour
-        if trigger.minute is not None and not "":
+        if trigger.minute is not None and str(trigger.minute).strip():
             cron_kwargs['minute'] = trigger.minute
+        
+        self.logger.info(f"Adding cron job with kwargs: {cron_kwargs}")
         
         self.scheduler.add_job(
             func=activate_trigger,
@@ -116,16 +131,19 @@ class WorkflowScheduler:
         """Add an interval-based scheduled job"""
         interval_kwargs = {}
         
-        if trigger.seconds is not None:
+        # Fix: Handle None values properly
+        if trigger.seconds is not None and trigger.seconds > 0:
             interval_kwargs['seconds'] = trigger.seconds
-        if trigger.minutes is not None:
+        if trigger.minutes is not None and trigger.minutes > 0:
             interval_kwargs['minutes'] = trigger.minutes
-        if trigger.hours is not None:
+        if trigger.hours is not None and trigger.hours > 0:
             interval_kwargs['hours'] = trigger.hours
 
         if not interval_kwargs:
-            self.logger.error(f"No interval specified for trigger {trigger.id}")
+            self.logger.error(f"No valid interval specified for trigger {trigger.id}")
             return
+        
+        self.logger.info(f"Adding interval job with kwargs: {interval_kwargs}")
         
         self.scheduler.add_job(
             func=activate_trigger,
@@ -150,18 +168,16 @@ class WorkflowScheduler:
         except Exception as e:
             self.logger.error(f"Error removing trigger {trigger_id}: {str(e)}")
     
-
     def update_trigger(self, trigger):
         """Update an existing scheduled trigger"""
         self.remove_trigger(trigger.id)
         if trigger.enabled:
             self.add_schedule_trigger(trigger)
     
-    
     def load_all_triggers(self):
         """Load all enabled ScheduleTriggers from database"""
         try:
-            with app.app_context():
+            with self.app.app_context():
                 triggers = ScheduleTrigger.query.filter_by(enabled=True).all()
             
             for trigger in triggers:
@@ -213,59 +229,65 @@ class WorkflowScheduler:
         try:
             self.logger.info("Starting scheduler reload...")
             
-            # current scheduled jobs
-            current_jobs = {job.id: job for job in self.scheduler.get_jobs()}
-            current_trigger_jobs = {job_id: job for job_id, job in current_jobs.items() 
-                                  if job_id.startswith('trigger_')}
-            
-            all_triggers = ScheduleTrigger.query.all()
-            expected_jobs = set()
-            
-            # process each trigger
-            for trigger in all_triggers:
-                job_id = f"trigger_{trigger.id}"
-                expected_jobs.add(job_id)
+            with self.app.app_context():
+                # Get current scheduled jobs
+                current_jobs = {job.id: job for job in self.scheduler.get_jobs()}
+                current_trigger_jobs = {job_id: job for job_id, job in current_jobs.items() 
+                                      if job_id.startswith('trigger_')}
                 
-                if trigger.enabled:
-                    # check if job needs updating
-                    existing_job = current_jobs.get(job_id)
+                all_triggers = ScheduleTrigger.query.all()
+                expected_jobs = set()
+                
+                # Process each trigger
+                for trigger in all_triggers:
+                    job_id = f"trigger_{trigger.id}"
+                    expected_jobs.add(job_id)
                     
-                    if existing_job:
-                        # check if job config changed
-                        if self._job_needs_update(trigger, existing_job):
-                            self.logger.info(f"Updating changed trigger {trigger.id}")
-                            self.remove_trigger(trigger.id)
-                            self.add_schedule_trigger(trigger)
+                    if trigger.enabled:
+                        # Check if job needs updating
+                        existing_job = current_jobs.get(job_id)
+                        
+                        if existing_job:
+                            # Check if job config changed
+                            if self._job_needs_update(trigger, existing_job):
+                                self.logger.info(f"Updating changed trigger {trigger.id}")
+                                self.remove_trigger(trigger.id)
+                                self.add_schedule_trigger(trigger)
+                            else:
+                                self.logger.debug(f"Trigger {trigger.id} unchanged, keeping existing job")
                         else:
-                            self.logger.debug(f"Trigger {trigger.id} unchanged, keeping existing job")
+                            # Add new trigger
+                            self.logger.info(f"Adding new trigger {trigger.id}")
+                            self.add_schedule_trigger(trigger)
                     else:
-                        # add new trigger
-                        self.logger.info(f"Adding new trigger {trigger.id}")
-                        self.add_schedule_trigger(trigger)
-                else:
-                    # disabled, remove
-                    if existing_job:
-                        self.logger.info(f"Removing disabled trigger {trigger.id}")
-                        self.remove_trigger(trigger.id)
-            
-            # remove orphaned jobs (no longer exist in database)
-            for job_id in current_trigger_jobs:
-                if job_id not in expected_jobs:
-                    trigger_id = job_id.replace('trigger_', '')
-                    self.logger.info(f"Removing orphaned job for trigger {trigger_id}")
-                    self.scheduler.remove_job(job_id)
-            
-            final_jobs = [job for job in self.scheduler.get_jobs() if job.id.startswith('trigger_')]
-            self.logger.info(f"Scheduler reload completed. Active scheduled triggers: {len(final_jobs)}")
-            
-            return {
-                'success': True,
-                'message': f'Reload completed. {len(final_jobs)} active scheduled triggers.',
-                'active_triggers': len(final_jobs)
-            }
+                        # Trigger is disabled, remove if it exists
+                        if existing_job:
+                            self.logger.info(f"Removing disabled trigger {trigger.id}")
+                            self.remove_trigger(trigger.id)
+                
+                # Remove orphaned jobs (no longer exist in database)
+                for job_id in current_trigger_jobs:
+                    if job_id not in expected_jobs:
+                        trigger_id = job_id.replace('trigger_', '')
+                        self.logger.info(f"Removing orphaned job for trigger {trigger_id}")
+                        try:
+                            self.scheduler.remove_job(job_id)
+                        except Exception as e:
+                            self.logger.error(f"Error removing orphaned job {job_id}: {e}")
+                
+                final_jobs = [job for job in self.scheduler.get_jobs() if job.id.startswith('trigger_')]
+                self.logger.info(f"Scheduler reload completed. Active scheduled triggers: {len(final_jobs)}")
+                
+                return {
+                    'success': True,
+                    'message': f'Reload completed. {len(final_jobs)} active scheduled triggers.',
+                    'active_triggers': len(final_jobs)
+                }
             
         except Exception as e:
+            import traceback
             self.logger.error(f"Error during scheduler reload: {str(e)}")
+            traceback.print_exc()
             return {
                 'success': False,
                 'message': f'Reload failed: {str(e)}',
@@ -275,78 +297,100 @@ class WorkflowScheduler:
     def _job_needs_update(self, trigger, existing_job):
         """Check if a job needs to be updated based on trigger configuration"""
         try:
-            # check job type
+            # Check if job name changed
+            expected_name = f"{trigger.job_type.title()} Trigger: {trigger.name}"
+            if existing_job.name != expected_name:
+                self.logger.info(f"Job name changed for trigger {trigger.id}: '{existing_job.name}' -> '{expected_name}'")
+                return True
+            
+            # Check job type and configuration
             if trigger.job_type == "cron":
                 if not hasattr(existing_job.trigger, 'fields'):
+                    self.logger.info(f"Job {existing_job.id} is not a cron job but should be")
                     return True
                 
-                # check cron 
-                trigger_fields = {}
-                if trigger.day_of_week is not None:
-                    trigger_fields['day_of_week'] = str(trigger.day_of_week)
-                if trigger.hour is not None:
-                    trigger_fields['hour'] = str(trigger.hour)
-                if trigger.minute is not None:
-                    trigger_fields['minute'] = str(trigger.minute)
+                # Build expected cron fields
+                expected_fields = {}
+                if trigger.day_of_week is not None and trigger.day_of_week.strip():
+                    expected_fields['day_of_week'] = str(trigger.day_of_week)
+                if trigger.hour is not None and str(trigger.hour).strip():
+                    expected_fields['hour'] = str(trigger.hour)
+                if trigger.minute is not None and str(trigger.minute).strip():
+                    expected_fields['minute'] = str(trigger.minute)
                 
-                # compare with existing current fields
-                for field_name, expected_value in trigger_fields.items():
-                    if hasattr(existing_job.trigger, 'fields'):
-                        existing_field = existing_job.trigger.fields.get(field_name)
-                        if existing_field and str(existing_field) != expected_value:
+                # Compare with existing fields
+                for field_name, expected_value in expected_fields.items():
+                    existing_field = existing_job.trigger.fields.get(field_name)
+                    if existing_field:
+                        existing_value = str(existing_field)
+                        if existing_value != expected_value:
+                            self.logger.info(f"Cron field {field_name} changed for trigger {trigger.id}: '{existing_value}' -> '{expected_value}'")
                             return True
+                    else:
+                        self.logger.info(f"Cron field {field_name} missing for trigger {trigger.id}")
+                        return True
+                
+                # Check if existing job has fields that shouldn't be there
+                job_field_names = set(existing_job.trigger.fields.keys())
+                expected_field_names = set(expected_fields.keys())
+                if job_field_names != expected_field_names:
+                    self.logger.info(f"Cron fields set changed for trigger {trigger.id}: {job_field_names} -> {expected_field_names}")
+                    return True
                     
             elif trigger.job_type == "interval":
                 if not hasattr(existing_job.trigger, 'interval'):
+                    self.logger.info(f"Job {existing_job.id} is not an interval job but should be")
                     return True
                 
-                # calc expected interval
+                # Calculate expected interval in seconds
                 expected_seconds = 0
-                if trigger.seconds:
+                if trigger.seconds and trigger.seconds > 0:
                     expected_seconds += trigger.seconds
-                if trigger.minutes:
+                if trigger.minutes and trigger.minutes > 0:
                     expected_seconds += trigger.minutes * 60
-                if trigger.hours:
+                if trigger.hours and trigger.hours > 0:
                     expected_seconds += trigger.hours * 3600
                 
-                # compare with current interval
+                if expected_seconds == 0:
+                    self.logger.error(f"Invalid interval configuration for trigger {trigger.id}")
+                    return True
+                
+                # Compare with current interval
                 existing_seconds = existing_job.trigger.interval.total_seconds()
                 if abs(existing_seconds - expected_seconds) > 1:  # Allow 1 second tolerance
+                    self.logger.info(f"Interval changed for trigger {trigger.id}: {existing_seconds}s -> {expected_seconds}s")
                     return True
-            
-            expected_name = f"{trigger.job_type.title()} Trigger: {trigger.name}"
-            if existing_job.name != expected_name:
-                return True
             
             return False
             
         except Exception as e:
             self.logger.warning(f"Error checking if job needs update for trigger {trigger.id}: {str(e)}")
+            # If we can't determine if it needs updating, assume it does
             return True
     
     def get_reload_status(self):
         """Get current status of scheduled triggers"""
         try:
-
-            total_triggers = ScheduleTrigger.query.count()
-            enabled_triggers = ScheduleTrigger.query.filter_by(enabled=True).count()
-            scheduled_jobs = [job for job in self.scheduler.get_jobs() if job.id.startswith('trigger_')]
-            
-            return {
-                'total_triggers_in_db': total_triggers,
-                'enabled_triggers_in_db': enabled_triggers,
-                'active_scheduled_jobs': len(scheduled_jobs),
-                'scheduler_running': self.scheduler.running if self.scheduler else False,
-                'scheduled_jobs': [
-                    {
-                        'job_id': job.id,
-                        'name': job.name,
-                        'next_run': job.next_run_time.isoformat() if job.next_run_time else None,
-                        'trigger_type': type(job.trigger).__name__
-                    }
-                    for job in scheduled_jobs
-                ]
-            }
+            with self.app.app_context():
+                total_triggers = ScheduleTrigger.query.count()
+                enabled_triggers = ScheduleTrigger.query.filter_by(enabled=True).count()
+                scheduled_jobs = [job for job in self.scheduler.get_jobs() if job.id.startswith('trigger_')]
+                
+                return {
+                    'total_triggers_in_db': total_triggers,
+                    'enabled_triggers_in_db': enabled_triggers,
+                    'active_scheduled_jobs': len(scheduled_jobs),
+                    'scheduler_running': self.scheduler.running if self.scheduler else False,
+                    'scheduled_jobs': [
+                        {
+                            'job_id': job.id,
+                            'name': job.name,
+                            'next_run': job.next_run_time.isoformat() if job.next_run_time else None,
+                            'trigger_type': type(job.trigger).__name__
+                        }
+                        for job in scheduled_jobs
+                    ]
+                }
             
         except Exception as e:
             self.logger.error(f"Error getting reload status: {str(e)}")
@@ -360,16 +404,3 @@ class WorkflowScheduler:
         if self.scheduler and self.scheduler.running:
             self.scheduler.shutdown()
             self.logger.info("Scheduler shut down")
-
-
-
-# scheduler.add_schedule_trigger(new_trigger)
-# scheduler.update_trigger(updated_trigger)
-# scheduler.remove_trigger(trigger_id)
-
-# Reload all triggers from database (safe for production)
-# result = scheduler.reload()
-# print(result['message'])
-
-# Check current status
-# status = scheduler.get_reload_status()

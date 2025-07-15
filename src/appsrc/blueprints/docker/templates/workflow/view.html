@@ -9,7 +9,7 @@
 %}
 
 {% set obj = workflow %}
-{% set back_url = "docker.workflows.index" %}
+{% set back_url =  url_for("docker.workflows.index") %}
 {% set back_text = "Back to CetaDash Workflows" %}
 {% set page_title = workflow.name %}
 {% set edit_button_text = "Edit Workflow" %}

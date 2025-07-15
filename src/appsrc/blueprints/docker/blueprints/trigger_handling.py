@@ -79,6 +79,7 @@ def parse_jinja_variables(headers: str) -> dict:
 
 
 def get_trigger_heading_map(headers:str) -> dict:
+    print(headers)
     data = yaml.safe_load(headers)
     if not "mappings" in data:
         raise ValueError("Trigger values must contain 'mappings' section")
@@ -166,7 +167,10 @@ def handle_trigger(user_id, trigger, request_headers, workflow, tasks, result_qu
     if isinstance(trigger, WorkflowTrigger):
         write_trigger_log("\n🖥️📖 Parsing variable map from trigger header translation")
         try:
-            headers_map = get_trigger_heading_map(trigger.headers)
+            if trigger.headers.strip():
+                headers_map = get_trigger_heading_map(trigger.headers)
+            else:
+                headers_map = {"mappings":{}}
         except Exception as e:
             trigger_log.status = STATUS_ENUM.HEADERS
             workflow_log.status = STATUS_ENUM.HEADERS
@@ -186,7 +190,10 @@ def handle_trigger(user_id, trigger, request_headers, workflow, tasks, result_qu
     elif isinstance(trigger, ScheduleTrigger):
         write_trigger_log("\n🖥️📖 Parsing variable supply from trigger")
         try:
-            trigger_variables = parse_jinja_variables(trigger.headers)
+            if trigger.headers.strip():
+                trigger_variables = parse_jinja_variables(trigger.headers)
+            else:
+                headers_map = {"mappings":{}}
         except Exception as e:
             trigger_log.status = STATUS_ENUM.HEADERS
             workflow_log.status = STATUS_ENUM.HEADERS

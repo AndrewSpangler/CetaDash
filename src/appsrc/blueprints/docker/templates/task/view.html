@@ -7,7 +7,7 @@
 %}
 
 {% set obj = task %}
-{% set back_url = "docker.tasks.index" %}
+{% set back_url =  url_for("docker.tasks.index") %}
 {% set back_text = "Back to Workflow Tasks" %}
 {% set page_title = task.name %}
 {% set edit_button_text = "Edit Workflow Task" %}

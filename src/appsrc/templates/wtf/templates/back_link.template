@@ -1,1 +1,1 @@
-<a href="{{url}}" class="text-white">&larr; {% if text %}{{ content }}{% else %}Back{% endif %}</a>
+<a href="{{url}}" class="text-white">&larr; {% if content %}{{ content }}{% else %}Back{% endif %}</a>

@@ -169,8 +169,9 @@ def edits(task_id, log_id):
 
     return render_template(
         'task/changelog.html',
-        task=task,
-        edit_log=edit_log
+        edit_log=edit_log,
+        back = url_for("docker.tasks.view", task_id=task_id),
+        back_text = "Back to Task "+task_id
     )
 
 
@@ -178,8 +179,20 @@ def edits(task_id, log_id):
 @app.permission_required(app.models.core.PERMISSION_ENUM.ADMIN)
 def delete(task_id):
     workflowtask = WorkflowTask.query.get_or_404(task_id)
+    
+    workflowtask.log_edit(
+        current_user.id,
+        ACTION_ENUM.DELETE,
+        message=f"Task '{workflowtask.name}' deleted"
+    )
     WorkflowTaskAssociation.query.filter_by(task_id=workflowtask.id).delete()
+    
+    from ..models import WorkflowTaskRunLog, WorkflowTaskScheduledRunLog
+    WorkflowTaskRunLog.query.filter_by(task_id=workflowtask.id).delete()
+    WorkflowTaskScheduledRunLog.query.filter_by(task_id=workflowtask.id).delete()
+    
     db.session.delete(workflowtask)
     db.session.commit()
+    
     flash('Workflow Task deleted successfully!', 'success')
     return redirect(url_for('docker.tasks.index'))

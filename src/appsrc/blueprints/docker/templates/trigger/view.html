@@ -5,7 +5,7 @@
 %}
 
 {% set obj = trigger %}
-{% set back_url = "docker.triggers.index" %}
+{% set back_url =  url_for("docker.triggers.index") %}
 {% set back_text = "Back to Triggers" %}
 {% set page_title = trigger.name %}
 {% set edit_button_text = "Edit Workflow Trigger" %}

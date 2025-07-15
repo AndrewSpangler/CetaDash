@@ -17,10 +17,10 @@
 {% set value_box=cd.creator_editor_box(obj) %}
 {{ cd.container_header(
   obj.name,
-  back_url,
-  back_text,
   action_buttons = actions,
-  value_boxes = [value_box] + value_boxes
+  value_boxes = [value_box] + value_boxes,
+  back=back_url,
+  back_text=back_text
 ) | safe }}
 {% endmacro %}
 

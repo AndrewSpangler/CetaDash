@@ -83,39 +83,87 @@ class WorkflowTask(BaseEditable):
 class WorkflowTaskEditLog(BaseEditLog):
     __tablename__ = "WorkflowTaskEditLog"
     __bind_key__ = "cetadash_db"
-    task_id = db.Column(db.Integer, db.ForeignKey('WorkflowTask.id'), nullable=False)
+    task_id = db.Column(
+        db.Integer,
+        db.ForeignKey('WorkflowTask.id', ondelete='CASCADE'),
+        nullable=False
+    )
     task = db.relationship(
         "WorkflowTask",
         foreign_keys=[task_id],
-        backref=backref("edit_logs", order_by="WorkflowTaskEditLog.id.desc()")
-)
+        backref=backref(
+            "edit_logs",
+            order_by="WorkflowTaskEditLog.id.desc()",
+            cascade="all, delete-orphan"
+        )
+    )
+
 
 class WorkflowTaskRunLog(BaseActionLog):
     __tablename__ = "WorkflowTaskRunLog"
     __bind_key__ = "cetadash_db"
-    task_id = db.Column(db.Integer, db.ForeignKey('WorkflowTask.id'), nullable=False)
+    task_id = db.Column(
+        db.Integer,
+        db.ForeignKey('WorkflowTask.id', ondelete='CASCADE'),
+        nullable=False
+    )
     task = db.relationship(
         "WorkflowTask",
         foreign_keys=[task_id], 
-        backref=backref("run_logs", order_by="WorkflowTaskRunLog.id.desc()")
+        backref=backref(
+            "run_logs",
+            order_by="WorkflowTaskRunLog.id.desc()",
+            cascade="all, delete-orphan"
+        )
     )
-    workflow_log_id = db.Column(db.Integer, db.ForeignKey('WorkflowRunLog.id'), nullable=False)
+    workflow_log_id = db.Column(
+        db.Integer,
+        db.ForeignKey('WorkflowRunLog.id', ondelete='CASCADE'),
+        nullable=False
+    )
     workflow_log = db.relationship(
         "WorkflowRunLog",
         foreign_keys=[workflow_log_id],
-        backref=backref("task_logs", order_by="WorkflowTaskRunLog.id.desc()")
+        backref=backref(
+            "task_logs",
+            order_by="WorkflowTaskRunLog.id.desc()",
+            cascade="all, delete-orphan"
+        )
     )
 
 class WorkflowTaskScheduledRunLog(BaseActionLog):
     __tablename__ = "WorkflowTaskScheduledRunLog"
     __bind_key__ = "cetadash_db"
-    task_id = db.Column(db.Integer, db.ForeignKey('WorkflowTask.id'), nullable=False)
-    task = db.relationship("WorkflowTask", foreign_keys=[task_id], backref="scheduled_run_logs")
-    workflow_log_id = db.Column(db.Integer, db.ForeignKey('WorkflowScheduledRunLog.id'), nullable=False)
+    task_id = db.Column(
+        db.Integer,
+        db.ForeignKey('WorkflowTask.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    task = db.relationship(
+        "WorkflowTask",
+        foreign_keys=[task_id],
+        backref=backref(
+            "scheduled_run_logs",
+            order_by="WorkflowTaskScheduledRunLog.id.desc()",
+            cascade="all, delete-orphan"
+        )
+    )
+    workflow_log_id = db.Column(
+        db.Integer,
+        db.ForeignKey(
+            'WorkflowScheduledRunLog.id',
+            ondelete='CASCADE'
+        ),
+        nullable=False
+    )
     workflow_log = db.relationship(
         "WorkflowScheduledRunLog",
         foreign_keys=[workflow_log_id],
-        backref=backref("scheduled_task_logs", order_by="WorkflowTaskScheduledRunLog.id.desc()")
+        backref=backref(
+            "scheduled_task_logs",
+            order_by="WorkflowTaskScheduledRunLog.id.desc()",
+            cascade="all, delete-orphan"
+        )
     )
 
 ####################
@@ -201,50 +249,101 @@ class Workflow(BaseEditable):
 class WorkflowEditLog(BaseEditLog):
     __tablename__ = "WorkflowEditLog"
     __bind_key__ = "cetadash_db"
-    workflow_id = db.Column(db.Integer, db.ForeignKey('Workflow.id'), nullable=False)
+    workflow_id = db.Column(
+        db.Integer,
+        db.ForeignKey('Workflow.id', ondelete='CASCADE'),
+        nullable=False
+    )
     workflow = db.relationship(
         "Workflow",
         foreign_keys=[workflow_id],
-        backref=backref("edit_logs", order_by="WorkflowEditLog.id.desc()")
+        backref=backref(
+            "edit_logs",
+            order_by="WorkflowEditLog.id.desc()",
+            cascade="all, delete-orphan"
+        )
     )
 
 
 class WorkflowRunLog(BaseActionLog):
     __tablename__ = "WorkflowRunLog"
     __bind_key__ = "cetadash_db"
-    workflow_id = db.Column(db.Integer, db.ForeignKey('Workflow.id'), nullable=False)
+    workflow_id = db.Column(
+        db.Integer,
+        db.ForeignKey('Workflow.id', ondelete='CASCADE'),
+        nullable=False
+    )
     workflow = db.relationship(
         "Workflow",
         foreign_keys=[workflow_id],
-        backref=backref("run_logs", order_by="WorkflowRunLog.id.desc()")
+        backref=backref(
+            "run_logs",
+            order_by="WorkflowRunLog.id.desc()",
+            cascade="all, delete-orphan"
+        )
     )
-
-    trigger_log_id = db.Column(db.Integer, db.ForeignKey('WorkflowTriggerRunLog.id'), nullable=False)
-    trigger_log = db.relationship("WorkflowTriggerRunLog", foreign_keys=[trigger_log_id])
-
+    trigger_log_id = db.Column(
+        db.Integer,
+        db.ForeignKey('WorkflowTriggerRunLog.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    trigger_log = db.relationship(
+        "WorkflowTriggerRunLog", 
+        foreign_keys=[trigger_log_id],
+        backref=backref(
+            "workflow_run_logs",
+            cascade="all, delete-orphan"
+        )
+    )
 
 class WorkflowScheduledRunLog(BaseActionLog):
     """Logs for scheduled triggers"""
     __tablename__ = "WorkflowScheduledRunLog"
     __bind_key__ = "cetadash_db"
-    workflow_id = db.Column(db.Integer, db.ForeignKey('Workflow.id'), nullable=False)
+    workflow_id = db.Column(
+        db.Integer,
+        db.ForeignKey('Workflow.id', ondelete='CASCADE'),
+        nullable=False
+    )
     workflow = db.relationship(
         "Workflow",
         foreign_keys=[workflow_id],
-        backref=backref("schedule_run_logs", order_by="WorkflowScheduledRunLog.id.desc()")
+        backref=backref(
+            "schedule_run_logs",
+            order_by="WorkflowScheduledRunLog.id.desc()",
+            cascade="all, delete-orphan"
+        )
     )
-    schedule_trigger_log_id = db.Column(db.Integer, db.ForeignKey('ScheduleTriggerRunLog.id'), nullable=False)
-    schedule_trigger_log = db.relationship("ScheduleTriggerRunLog", foreign_keys=[schedule_trigger_log_id])
+    schedule_trigger_log_id = db.Column(
+        db.Integer,
+        db.ForeignKey('ScheduleTriggerRunLog.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    schedule_trigger_log = db.relationship(
+        "ScheduleTriggerRunLog", 
+        foreign_keys=[schedule_trigger_log_id],
+        backref=backref(
+            "workflow_scheduled_logs",
+            cascade="all, delete-orphan"
+        )
+    )
 
 
 class WorkflowTaskAssociation(db.Model):
     __tablename__ = "WorkflowTaskAssociation"
     __bind_key__ = "cetadash_db"
     id = db.Column(db.Integer, primary_key=True)
-    workflow_id = db.Column(db.Integer, db.ForeignKey("Workflow.id"), nullable=False)
-    task_id = db.Column(db.Integer, db.ForeignKey("WorkflowTask.id"), nullable=False)
+    workflow_id = db.Column(
+        db.Integer,
+        db.ForeignKey("Workflow.id", ondelete='CASCADE'),
+        nullable=False
+    )
+    task_id = db.Column(
+        db.Integer,
+        db.ForeignKey("WorkflowTask.id", ondelete='CASCADE'),
+        nullable=False
+    )
     priority = db.Column(db.Integer, nullable=False, default=0)
-
     workflow = db.relationship(
         "Workflow",
         backref=db.backref(
@@ -253,7 +352,10 @@ class WorkflowTaskAssociation(db.Model):
             cascade="all,delete-orphan"
         )
     )
-    task = db.relationship("WorkflowTask", backref="workflow_associations")
+    task = db.relationship(
+        "WorkflowTask",
+        backref="workflow_associations"
+    )
 
 
 ####################
@@ -265,40 +367,79 @@ class WorkflowTrigger(BaseEditable):
     endpoint = db.Column(db.String(200), nullable=False)
     headers = db.Column(db.Text, default=DEFAULT_HEADER_MAPPING)
     environment = db.Column(db.Text)
-    workflow_id = db.Column(db.Integer, db.ForeignKey("Workflow.id"), nullable=False)
-    workflow = db.relationship("Workflow", backref="triggers")
+    workflow_id = db.Column(
+        db.Integer,
+        db.ForeignKey("Workflow.id", ondelete="SET NULL"),
+        nullable=True
+    )
+    workflow = db.relationship(
+        "Workflow", 
+        backref=backref(
+            "triggers",
+            # Don't cascade delete triggers when workflow is deleted
+            cascade="save-update, merge, refresh-expire, expunge"
+        )
+    )
 
     def log_edit(self, user_id: int, action: int = ACTION_ENUM.MODIFY, **kw):
-        return super().log_edit(WorkflowTriggerEditLog, user_id, action=action, trigger_id=self.id, **kw)
+        return super().log_edit(
+            WorkflowTriggerEditLog,
+            user_id,
+            action=action,
+            trigger_id=self.id,
+            **kw
+        )
     
     def log_run(self, user_id: int, status: int = STATUS_ENUM.RUNNING, **kw):
-        return super().log_run(WorkflowTriggerRunLog, user_id, status=status, trigger_id=self.id, **kw)
-
+        return super().log_run(
+            WorkflowTriggerRunLog,
+            user_id, status=status,
+            trigger_id=self.id,
+            **kw
+        )
 
 class WorkflowTriggerEditLog(BaseEditLog):
     __tablename__ = "WorkflowTriggerEditLog"
     __bind_key__ = "cetadash_db"
-    trigger_id = db.Column(db.Integer, db.ForeignKey('WorkflowTrigger.id'), nullable=False)
+    trigger_id = db.Column(
+        db.Integer,
+        db.ForeignKey('WorkflowTrigger.id', ondelete='CASCADE'),
+        nullable=False
+    )
     trigger = db.relationship(
         "WorkflowTrigger",
         foreign_keys=[trigger_id],
-        backref=backref("edit_logs", order_by="WorkflowTriggerEditLog.id.desc()")
+        backref=backref(
+            "edit_logs",
+            order_by="WorkflowTriggerEditLog.id.desc()",
+            cascade="all, delete-orphan"
+        )
     )
 
 
 class WorkflowTriggerRunLog(BaseActionLog):
     __tablename__ = "WorkflowTriggerRunLog"
     __bind_key__ = "cetadash_db"
-    trigger_id = db.Column(db.Integer, db.ForeignKey('WorkflowTrigger.id'), nullable=False)
+    trigger_id = db.Column(
+        db.Integer,
+        db.ForeignKey('WorkflowTrigger.id', ondelete='CASCADE'),
+        nullable=False
+    )
     trigger = db.relationship(
         "WorkflowTrigger",
         foreign_keys=[trigger_id],
-        backref=backref("run_logs", order_by="WorkflowTriggerRunLog.id.desc()")
+        backref=backref(
+            "run_logs",
+            order_by="WorkflowTriggerRunLog.id.desc()",
+            cascade="all, delete-orphan"
+        )
     )
 
     @property
     def workflow_log(self):
-        return WorkflowRunLog.query.filter_by(trigger_log_id=self.id).first()
+        return WorkflowRunLog.query.filter_by(
+            trigger_log_id=self.id
+        ).first()
 
 
 ####################
@@ -309,8 +450,19 @@ class ScheduleTrigger(BaseEditable):
     __bind_key__ = "cetadash_db"
     headers = db.Column(db.Text, default=DEFAULT_HEADER_MAPPING)
     environment = db.Column(db.Text)
-    workflow_id = db.Column(db.Integer, db.ForeignKey("Workflow.id"), nullable=False)
-    workflow = db.relationship("Workflow", backref="workflow_schedules")
+    workflow_id = db.Column(
+        db.Integer, 
+        db.ForeignKey("Workflow.id", ondelete="SET NULL"), 
+        nullable=True
+    )
+    workflow = db.relationship(
+        "Workflow", 
+        backref=backref(
+            "workflow_schedules",
+            # Don't cascade delete schedules when workflow is deleted
+            cascade="save-update, merge, refresh-expire, expunge"
+        )
+    )
 
     job_type = db.Column(db.String(50), nullable=False)  # "interval", "cron"
 
@@ -376,21 +528,38 @@ class ScheduleTrigger(BaseEditable):
 class ScheduleTriggerEditLog(BaseEditLog):
     __tablename__ = "ScheduleTriggerEditLog"
     __bind_key__ = "cetadash_db"
-    schedule_trigger_id = db.Column(db.Integer, db.ForeignKey('ScheduleTrigger.id'), nullable=False)
+    schedule_trigger_id = db.Column(
+        db.Integer,
+        db.ForeignKey('ScheduleTrigger.id', ondelete='CASCADE'),
+        nullable=False
+    )
     schedule_trigger = db.relationship(
         "ScheduleTrigger",
         foreign_keys=[schedule_trigger_id],
-        backref=backref("edit_logs", order_by="ScheduleTriggerEditLog.id.desc()")
+        backref=backref(
+            "edit_logs",
+            order_by="ScheduleTriggerEditLog.id.desc()",
+            cascade="all, delete-orphan"
+        )
     )
+
 
 class ScheduleTriggerRunLog(BaseActionLog):
     __tablename__ = "ScheduleTriggerRunLog"
     __bind_key__ = "cetadash_db"
-    schedule_trigger_id = db.Column(db.Integer, db.ForeignKey('ScheduleTrigger.id'), nullable=False)
+    schedule_trigger_id = db.Column(
+        db.Integer,
+        db.ForeignKey('ScheduleTrigger.id', ondelete='CASCADE'),
+        nullable=False
+    )
     schedule_trigger = db.relationship(
         "ScheduleTrigger",
         foreign_keys=[schedule_trigger_id],
-        backref=backref("run_logs", order_by="ScheduleTriggerRunLog.id.desc()")
+        backref=backref(
+            "run_logs",
+            order_by="ScheduleTriggerRunLog.id.desc()",
+            cascade="all, delete-orphan"
+        )
     )
 
     @property
@@ -398,7 +567,7 @@ class ScheduleTriggerRunLog(BaseActionLog):
         return WorkflowScheduledRunLog.query.filter_by(schedule_trigger_log_id=self.id).first()
 
 
-
+# Test data and init_db function remain the same...
 test_data = {
     "tasks" : [
         {
@@ -530,13 +699,18 @@ def init_db(app):
             WorkflowTask,
             WorkflowTaskEditLog,
             WorkflowTaskRunLog,
+            WorkflowTaskScheduledRunLog,
             Workflow,
             WorkflowEditLog,
             WorkflowRunLog,
+            WorkflowScheduledRunLog,
             WorkflowTaskAssociation,
             WorkflowTrigger,
             WorkflowTriggerEditLog,
-            WorkflowTriggerRunLog
+            WorkflowTriggerRunLog,
+            ScheduleTrigger,
+            ScheduleTriggerEditLog,
+            ScheduleTriggerRunLog
         ):
             setattr(app.models.docker, obj.__name__, obj)
 

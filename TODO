@@ -1,7 +1,5 @@
-back button in changelog
 add action buttons to container view page
-
-add table page in cd binds with context 
+add table page in cd binds with context by warpping the template render function
 
 Trigger logs store ran endpoint as string, save session id and put on logs page
 add start and end times to run logs
@@ -57,11 +55,3 @@ loading message in tables?
 COSMETIC:
  - fix bootstrap copy to clipboard popup theme
  - per-user personal theme overrides from db
-
-
-
-
-
-
-
-

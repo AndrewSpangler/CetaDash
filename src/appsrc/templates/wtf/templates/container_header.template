@@ -1,7 +1,7 @@
 <div class="card-header bg-dark text-white">
   <div>
     <div class="card-title-body" style="min-height: 0px;">
-      {% if back %}{{ back_text | cd.back_link(url_for(back)) }}{% endif %}
+      {% if back %}{{ back_text | cd.back_link(back) }}{% endif %}
       {{ cd.header_title(title) }}
       {% if action_buttons %}
       {% for b in action_buttons %}
