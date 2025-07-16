@@ -5,11 +5,13 @@
 {% macro view_page_header(obj, edit_box=True, value_boxes=[]) %}
 {% set actions=[] %}
 {% if edit_box %}
-{% set actions=[make_table_button(
+{% set actions=[cd.table_button(
   edit_button_text,
-  url_args=[[edit_button_url],
-  edit_button_args],
-  classes=["bi", "bi-pencil"],
+  url_args=[
+    edit_button_url,
+    edit_button_args
+  ],
+  classes="bi bi-pencil",
   btn_type="primary",
   float="left")]
 %}

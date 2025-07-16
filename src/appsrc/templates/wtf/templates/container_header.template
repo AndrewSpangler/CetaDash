@@ -1,26 +1,17 @@
-<div class="card-header bg-dark text-white">
-  <div>
-    <div class="card-title-body" style="min-height: 0px;">
-      {% if back %}{{ back_text | cd.back_link(back) }}{% endif %}
-      {{ cd.header_title(title) }}
-      {% if action_buttons %}
-      {{ 
-        action_buttons
-          | join
-          | safe
-        }}
-      {% endif %}
-    </div>
-  </div>
-  {% if header_elements %}
-  {{
-    header_elements
-      | join
+{{
+  (
+    ((value_boxes | join) if value_boxes else "")
+      ~(
+        (header_elements | join )
+        if header_elements
+        else ""
+      )
       | div(style="float: right;")
-      | safe
-  }}
-  {% endif %}
-  {% if value_boxes %}
-  {{ value_boxes | join | safe }}
-  {% endif %}
-</div>
+    ~((back_text | cd.back_link(back)) if back else "")
+    ~ cd.header_title(title)
+    ~ (action_buttons if action_buttons else [])
+      | join
+      | div("bs-card-title-body", style="min-height: 0px;")
+  ) | bs.card_header("bg-dark text-white")
+    | safe
+}}

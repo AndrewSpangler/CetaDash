@@ -11,11 +11,7 @@ from flask import (
 )
 from flask_login import current_user
 from ...main import app, db
-from ...modules.parsing import (
-    make_table_page,
-    make_table_button,
-    make_table_icon_button
-)
+from ...modules.parsing import make_table_page
 from .models import db, Document, DocumentEditLog, init_db
 from .forms import DocumentForm
 
@@ -35,20 +31,7 @@ def index():
     search_query = request.args.get('q', '')
     page = request.args.get('page', 1, type=int)
     per_page = 10
-
     documents = Document.query.paginate(page=page, per_page=per_page)
-
-    def make_edit_button(doc:Document) -> str:
-        return make_table_icon_button(
-            url_args=(("docu.edit",), {"document_id":doc.id}),
-            classes=["bi-pencil"],
-            btn_type="transparent",
-            tooltip="Edit document",
-            float="right"
-        )
-
-    def make_document_link(doc:Document) -> str:
-        return f"<a href='{url_for('docu.view', document_id=doc.id)}'>[{doc.id}]{doc.title}</a>"
     
     search_bar = app.wtf.cd.search_bar(
         endpoint = url_for('docu.index'),
@@ -56,10 +39,10 @@ def index():
         placeholder="Search by title / content."
     )
     
-    new_button = make_table_button(
+    new_button = app.wtf.cd.table_button(
         "New Document",
-        url_args=[["docu.create"], {}],
-        classes=["bi", "bi-plus"],
+        url_args=["docu.create",{}],
+        classes="bi bi-plus",
         btn_type="success",
     )   
 
@@ -69,16 +52,29 @@ def index():
         columns=[
             "[ID] Document",
             "Created By",
-            "Created At",
-            "Last Edited By",
+            # "Created At",
+            # "Last Edited By",
             "Updated At",
         ],
         rows=[
             (
-                make_document_link(d) + make_edit_button(d) if current_user.is_admin else "",
+                app.wtf.a(
+                    f"[{d.id}]{d.title}",
+                    href=url_for('docu.view', document_id=d.id)
+                )
+                + (
+                    app.wtf.cd.table_icon_button(
+                        url_args=("docu.edit",{"document_id":d.id}),
+                        classes="bi-pencil",
+                        btn_type="transparent",
+                        tooltip="Edit document",
+                        float="right"
+                    ) if current_user.is_admin
+                    else ""
+                ),
                 d.creator.name,
-                d.created_at_pretty,
-                d.last_editor.name,
+                # d.created_at_pretty,
+                # d.last_editor.name,
                 d.edited_at_pretty,
             )
             for d in documents  

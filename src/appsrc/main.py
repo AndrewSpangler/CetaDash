@@ -31,7 +31,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from werkzeug.datastructures import ImmutableDict
 from .modules.parsing import (
-    make_table_button,
     make_table_page,
     recursive_update
 )
@@ -345,7 +344,6 @@ def provide_selection() -> dict:
         "nav_enabled": True,
         "PERMISSION_MAP": app.models.core.PERMISSION_MAP,
         "PERMISSION_ENUM": app.models.core.PERMISSION_ENUM,
-        "make_table_button": make_table_button,
         "themes": BOOTSWATCH_THEMES,
         "selected_theme": selected_theme,
         "models": app.models
@@ -431,20 +429,20 @@ def background_tasks():
         (
             k,
             v.interval,
-            make_table_button(
+            app.wtf.table_button(
                 " "+str(v.enabled),
-                (('background_tasks',),dict(task=k, toggle=True)),
+                ('background_tasks',dict(task=k, toggle=True)),
                 btn_type="primary",
-                classes=["bi", "bi-toggle-"+("on" if v.enabled else "off")],
+                classes="bi bi-toggle-"+("on" if v.enabled else "off"),
             ),
             v.running,
             app.wtf.pretty_date(app.wtf.localize(v.last_run)),
             app.wtf.pretty_date(app.wtf.localize(v.job.next_run_time)),
-            make_table_button(
+            app.wtf.table_button(
                 " Trigger Task Run",
-                (('background_tasks',),dict(task=k, run_now=True)),
+                ('background_tasks',dict(task=k, run_now=True)),
                 btn_type="primary",
-                classes=["bi", "bi-play-fill"],
+                classes="bi bi-play-fill",
             ),
         ) for k,v in app.task_manager.tasks.items()
     ]

@@ -22,11 +22,7 @@ from ..models import (
     ACTION_ENUM,
     STATUS_ENUM
 )
-from ....modules.parsing import (
-    make_table_button,
-    make_table_icon_button,
-    make_table_page
-)
+from ....modules.parsing import make_table_page
 
 
 

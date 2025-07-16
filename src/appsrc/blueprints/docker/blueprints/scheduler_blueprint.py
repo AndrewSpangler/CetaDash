@@ -3,10 +3,7 @@ import datetime
 import queue
 import threading
 from functools import wraps
-from ....modules.parsing import (
-    make_table_button,
-    make_table_page
-)
+from ....modules.parsing import make_table_page
 from flask import (
     Blueprint,
     render_template,
@@ -47,10 +44,10 @@ blueprint = Blueprint(
 @app.permission_required(app.models.core.PERMISSION_ENUM.ADMIN)
 def index():
     triggers = ScheduleTrigger.query.all()
-    new_button = make_table_button(
+    new_button = app.wtf.cd.table_button(
         "New Scheduled Trigger",
-        url_args=[["docker.scheduler.create"], {}],
-        classes=["bi", "bi-plus"],
+        url_args=["docker.scheduler.create",{}],
+        classes="bi bi-plus",
         btn_type="success"
     )
     page = make_table_page(
