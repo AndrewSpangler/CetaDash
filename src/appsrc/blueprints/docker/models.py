@@ -37,6 +37,7 @@ class WorkflowTask(BaseEditable):
     __bind_key__ = "cetadash_db"
     template = db.Column(db.Text)
     environment = db.Column(db.Text)
+    use_script = db.Column(db.Boolean, default=False)
 
     def log_edit(
         self,
@@ -479,11 +480,30 @@ class ScheduleTrigger(BaseEditable):
 
     enabled = db.Column(db.Boolean, default=True)
 
-    def log_edit(self, user_id: int, action: int = ACTION_ENUM.MODIFY, **kw):
-        return super().log_edit(ScheduleTriggerEditLog, user_id, action=action, schedule_trigger_id=self.id, **kw)
+    def log_edit(self,
+        user_id: int,
+        action: int = ACTION_ENUM.MODIFY,
+        **kw
+    ):
+        return super().log_edit(
+            ScheduleTriggerEditLog,
+            user_id,
+            action=action,
+            schedule_trigger_id=self.id,
+            **kw
+        )
     
-    def log_run(self, status: int = STATUS_ENUM.RUNNING, **kw):
-        return super().log_run(ScheduleTriggerRunLog, SYSTEM_ID, status=status, schedule_trigger_id=self.id, **kw)
+    def log_run(self,
+        status: int = STATUS_ENUM.RUNNING,
+        **kw
+    ):
+        return super().log_run(
+            ScheduleTriggerRunLog,
+            SYSTEM_ID,
+            status=status,
+            schedule_trigger_id=self.id,
+            **kw
+        )
     
     @property
     def schedule_string(self) -> str:
@@ -566,6 +586,147 @@ class ScheduleTriggerRunLog(BaseActionLog):
     @property
     def workflow_log(self):
         return WorkflowScheduledRunLog.query.filter_by(schedule_trigger_log_id=self.id).first()
+
+
+####################
+# CONTAINERIZED SCRIPTS
+####################
+class WorkflowScript(BaseEditable):
+    __tablename__ = "WorkflowScript"
+    __bind_key__ = "cetadash_db"
+    environment = db.Column(db.Text)
+    script = db.Column(db.Text)
+    network_enabled = db.Column(db.Boolean, default=True)
+   
+    def log_edit(
+        self,
+        user_id: int,
+        action: int = ACTION_ENUM.MODIFY,
+        **kw
+    ):
+        return super().log_edit(
+            WorkflowScriptEditLog,
+            user_id,
+            action=action,
+            script_id=self.id,
+            **kw
+        )
+
+    def log_run(
+        self,
+        user_id:int,
+        workflow_log_id:int,
+        status:int = STATUS_ENUM.RUNNING
+    ):
+        return super().log_run(
+            WorkflowScriptRunLog,
+            user_id,
+            status=status,
+            script_id=self.id,
+            workflow_log_id=workflow_log_id
+        )
+    
+    def log_scheduled_run(
+        self,
+        workflow_log_id:int,
+        status:int = STATUS_ENUM.RUNNING
+    ):
+        return super().log_run(
+            WorkflowScriptScheduledRunLog,
+            SYSTEM_ID,
+            status=status,
+            script_id=self.id,
+            workflow_log_id=workflow_log_id
+        )
+
+
+class WorkflowScriptEditLog(BaseEditLog):
+    __tablename__ = "WorkflowScriptEditLog"
+    __bind_key__ = "cetadash_db"
+    script_id = db.Column(
+        db.Integer,
+        db.ForeignKey('WorkflowScript.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    script = db.relationship(
+        "WorkflowScript",
+        foreign_keys=[script_id],
+        backref=backref(
+            "edit_logs",
+            order_by="WorkflowScriptEditLog.id.desc()",
+            cascade="all, delete-orphan"
+        )
+    )
+
+class WorkflowScriptRunLog(BaseActionLog):
+    __tablename__ = "WorkflowScriptRunLog"
+    __bind_key__ = "cetadash_db"
+    script_id = db.Column(
+        db.Integer,
+        db.ForeignKey('WorkflowScript.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    script = db.relationship(
+        "WorkflowScript",
+        foreign_keys=[script_id], 
+        backref=backref(
+            "run_logs",
+            order_by="WorkflowScriptRunLog.id.desc()",
+            cascade="all, delete-orphan"
+        )
+    )
+    task_log_id = db.Column(
+        db.Integer,
+        db.ForeignKey('WorkflowTaskRunLog.id', ondelete='CASCADE'),
+        unique=True,
+        nullable=False
+    )
+    task_log = db.relationship(
+        "WorkflowTaskRunLog",
+        foreign_keys=[task_log_id],
+        backref=backref(
+            "script_run_log",
+            uselist=False,
+            cascade="all, delete-orphan"
+        )
+    )
+
+
+class WorkflowScriptScheduledRunLog(BaseActionLog):
+    __tablename__ = "WorkflowScriptScheduledRunLog"
+    __bind_key__ = "cetadash_db"
+
+    script_id = db.Column(
+        db.Integer,
+        db.ForeignKey('WorkflowScript.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    script = db.relationship(
+        "WorkflowScript",
+        foreign_keys=[script_id],
+        backref=backref(
+            "scheduled_run_logs",
+            order_by="WorkflowScriptScheduledRunLog.id.desc()",
+            cascade="all, delete-orphan"
+        )
+    )
+
+    task_log_id = db.Column(
+        db.Integer,
+        db.ForeignKey('WorkflowTaskScheduledRunLog.id', ondelete='CASCADE'),
+        unique=True,
+        nullable=False
+    )
+    task_log = db.relationship(
+        "WorkflowTaskScheduledRunLog",
+        foreign_keys=[task_log_id],
+        backref=backref(
+            "script_scheduled_run_log",
+            uselist=False,
+            cascade="all, delete-orphan"
+        )
+    )
+
 
 
 # Test data and init_db function remain the same...
@@ -697,6 +858,10 @@ def init_db(app):
         for obj in (
             ACTION_ENUM,
             STATUS_ENUM,
+            WorkflowScript,
+            WorkflowScriptEditLog,
+            WorkflowScriptRunLog,
+            WorkflowScriptScheduledRunLog,
             WorkflowTask,
             WorkflowTaskEditLog,
             WorkflowTaskRunLog,

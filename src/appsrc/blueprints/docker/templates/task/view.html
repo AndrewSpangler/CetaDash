@@ -30,7 +30,7 @@
         | bs.card_header("bg-dark text-white")
       ~ (
         (task.template or "")
-          | cm.yaml_viewer(id="template")
+          | cm.yaml_viewer(id="template", theme=selected_editor_theme)
         ~ (
           "Docker Compose template. Variables from Triggers "
           " / Schedulers / Listeners may be used in the template "
@@ -45,7 +45,7 @@
         | bs.card_header("bg-dark text-white")
       ~ (
         (task.environment or "")
-          | cm.env_viewer(id="environment")
+          | cm.env_viewer(id="environment", theme=selected_editor_theme)
         ~ (
           "Environment variables defined here will "
           "be applied to to the Task. "

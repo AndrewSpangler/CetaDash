@@ -1,30 +1,41 @@
-{{ cd.section_card_start("edit-log", "Edit Logs", "my-3 mt-0") | safe }}
-<table class="table table-striped" id="edit_log_table" width="100%">
-  {{
+{% macro edit_log_row(log) %}
+{{
+  (
+    log_url_callback(log),
+    log.timestamp_pretty,
+    log.user.name,
+    models.docker.ACTION_ENUM._NAMES[log.action]
+  ) | acc(small)
+    | jacc(td)
+    | tr
+    | safe
+}}
+{% endmacro %}
+{{
+  cd.section_card(
     (
-      "Edit ID",
-      "Edit Timestamp",
-      "Editor",
-      "Edit Action",
-    ) | jacc(th)
-      | tr
-      | thead
-      | safe
-  }}
-  <tbody>
-    {% for log in obj.edit_logs %}
-    {{
+
       (
-        log_url_callback(log),
-        log.timestamp_pretty,
-        log.user.name,
-        models.docker.ACTION_ENUM._NAMES[log.action]
-      ) | acc(small)
-        | jacc(td)
+        "Edit ID",
+        "Edit Timestamp",
+        "Editor",
+        "Edit Action",
+      ) | jacc(th)
         | tr
-        | safe
-    }}
-    {% endfor %}
-  </tbody>
-</table>
-{{ cd.section_card_end("edit-logs") | safe }}
+        | thead
+  
+      ~ obj.edit_logs
+        | jacc(edit_log_row)
+        | tbody
+
+    ) | table(
+      "table table-striped",
+      id="edit_log_table",
+      width="100%"
+    ),
+    
+    "edit-log",
+    "Changelogs",
+    classes="mt-0 mb-1"
+  ) | safe
+}}

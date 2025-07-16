@@ -31,7 +31,7 @@
   (
     (
       form.headers
-        | cm.yaml_field
+        | cm.yaml_field(theme=selected_editor_theme)
       ~ (
         "Defines the translation from external proxy headers "
         "to internal variables to be used by Task templating. "
@@ -41,7 +41,7 @@
     ),
     (
       form.environment
-        | cm.env_field
+        | cm.env_field(theme=selected_editor_theme)
       ~ (
         "Variables defined here will override "
         "Workflow and Task environments."

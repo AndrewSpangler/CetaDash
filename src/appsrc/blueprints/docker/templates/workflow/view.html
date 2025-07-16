@@ -31,7 +31,7 @@
       | bs.card_header("bg-dark text-white")
     ~ (
       (workflow.environment or "")
-        | cm.env_viewer(id="environment")
+        | cm.env_viewer(id="environment", theme=selected_editor_theme)
       ~ (
         "Workflow environment variables defined here will "
         "be applied to tasks run as part of the workflow. "

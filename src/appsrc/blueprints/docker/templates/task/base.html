@@ -14,7 +14,7 @@
     form.details
       | mde.md_field,
     form.environment
-      | cm.env_field
+      | cm.env_field(theme=selected_editor_theme)
     ~ (
       "Variables defined here may be overridden "
       "by Workflow / Trigger / Scheduler / Listener "
@@ -24,7 +24,7 @@
   ) | jacc(bs.col, classes="mb-0 mt-2"),
   (
     form.template
-      | cm.yaml_field
+      | cm.yaml_field(theme=selected_editor_theme)
     ~ (
       "Header translations defined in Triggers "
       "/ Schedules / Listeners may be used as "

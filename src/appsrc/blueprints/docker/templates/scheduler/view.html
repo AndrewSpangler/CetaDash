@@ -84,7 +84,7 @@
         | bs.card_header("bg-dark text-white")
       ~ (
         (trigger.headers or "")
-          | cm.yaml_viewer(id="headers")
+          | cm.yaml_viewer(id="headers", theme=selected_editor_theme)
         ~ (
           "Defines internal variables to be used by Task templating. "
           "These variables are not provided to the environment file. "
@@ -98,7 +98,7 @@
         | bs.card_header("bg-dark text-white")
       ~ (
         (trigger.environment or "")
-          | cm.env_viewer(id="environment")
+          | cm.env_viewer(id="environment", theme=selected_editor_theme)
         ~ (
           "Environment variables defined here will "
           "be applied to all tasks run as part of the workflow. "

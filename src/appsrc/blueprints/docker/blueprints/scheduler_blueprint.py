@@ -119,7 +119,7 @@ groups: admins"""
 
         if not workflow:
             flash("You must select a workflow.", "danger")
-            return render_template("scheduler/new.html", form=form, object_type="Workflow Task")
+            return render_template("scheduler/new.html", form=form)
 
         cron_fields = dict(
             day_of_week=form.day_of_week.data,
@@ -173,7 +173,7 @@ groups: admins"""
 
         return redirect(url_for("docker.scheduler.view", trigger_id=trigger.id))
 
-    return render_template("scheduler/new.html", object_type="Workflow Task", form=form)
+    return render_template("scheduler/new.html", form=form)
 
 
 @blueprint.route('/reload', methods=['GET'])

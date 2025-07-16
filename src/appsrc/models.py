@@ -69,6 +69,7 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(100), unique=True, nullable=False)
     date_created = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     selected_theme = db.Column(db.String(100), default="default")
+    selected_editor_theme = db.Column(db.String(100), default="isotope")
     
     @property
     def is_admin(self):

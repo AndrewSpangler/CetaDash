@@ -71,15 +71,21 @@
 {% macro task_edit_log_link(log)
 %}{{
   log.id
-  | a(href=url_for("docker.tasks.edits", task_id=log.task.id, log_id=log.id))
+  | a(href=url_for("docker.tasks.edits", task_id=log.task_id, log_id=log.id))
   | safe
 }}{% endmacro %}
 
+{% macro script_edit_log_link(log)
+  %}{{
+    log.id
+    | a(href=url_for("docker.scripts.edits", script_id=log.script_id, log_id=log.id))
+    | safe
+  }}{% endmacro %}
 
 {% macro workflow_edit_log_link(log)
 %}{{
   log.id
-  | a(href=url_for("docker.workflows.edits", workflow_id=log.workflow.id, log_id=log.id))
+  | a(href=url_for("docker.workflows.edits", workflow_id=log.workflow_id, log_id=log.id))
   | safe
 }}{% endmacro %}
 
@@ -534,6 +540,81 @@
         | jacc(trigger_log_row)
         | tbody
     ) | cd.table(id="trigger_log_" ~ trigger.id ~ "_table",)
+      | safe
+  }}
+{% endmacro %}
+
+
+
+{% macro script_log_table(script) %}
+  {% macro script_log_row(l) %}
+    {{
+      (
+        l.timestamp_pretty,
+        app.models.docker.STATUS_ENUM._NAMES[l.status],
+        l.user.name,
+        workflow_link(l.task_log.workflow_log.workflow),
+        trigger_link(l.task_log.workflow_log.trigger_log.trigger),
+        (
+          "Trigger: " ~ trigger_run_log_link(l.task_logworkflow_log.trigger_log) 
+          ~ "\nWorkflow: " ~ workflow_run_log_link(l.task_log.workflow_log)
+          ~ "\nTask: " ~ workflow_task_run_log_link(l.task_log)
+        ) | pre
+      ) | acc(small) | jacc(td) | tr | safe
+    }}
+  {% endmacro %}
+  {{
+    (
+      (
+        "Timestamp",
+        "Status",
+        "Runner",
+        "Workflow",
+        "Trigger",
+        "Task",
+        "Logs",
+      ) | cd.table_head
+      ~ script.run_logs
+        | jacc(script_log_row)
+        | tbody
+    ) | cd.table(id="script_run_log_" ~ script.id ~ "_table")
+      | safe
+  }}
+{% endmacro %}
+
+
+
+{% macro script_scheduled_log_table(script) %}
+  {% macro scheduled_script_log_row(l) %}
+    {{
+      (
+        l.timestamp_pretty,
+        app.models.docker.STATUS_ENUM._NAMES[l.status],
+        (l.user.name if l.user else "System"),
+        workflow_link(l.task_log.workflow_log.workflow),
+        schedule_trigger_link(l.task_log.workflow_log.schedule_trigger_log.schedule_trigger),
+        (
+          "Schedule: " ~ scheduler_run_log_link_from_workflow_log(l.task_log.workflow_log)
+          ~ "\nWorkflow: " ~ workflow_schedule_run_log_link(l.task_log.workflow_log)
+          ~ "\nTask: " ~ workflow_task_run_log_link(l.task_log)
+        ) | pre()
+      ) | acc(small) | jacc(td) | tr | safe
+    }}
+  {% endmacro %}
+  {{
+    (
+      (
+        "Timestamp",
+        "Status",
+        "Runner",
+        "Workflow",
+        "Schedule",
+        "Logs"
+      ) | cd.table_head
+      ~ script.scheduled_run_logs
+        | jacc(scheduled_script_log_row)
+        | tbody
+    ) | cd.table(id="scheduled_script_run_log_" ~ script.id ~ "_table")
       | safe
   }}
 {% endmacro %}

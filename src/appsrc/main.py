@@ -49,6 +49,21 @@ for css in os.scandir(os.path.join(SOURCE_DIR, "static/css/bootswatch")):
         .strip(".")
     )
 
+EDITOR_THEMES = [
+    "3024-day","3024-night","abbott","abcdef","ambiance-mobile","ambiance",
+    "ayu-dark","ayu-mirage","base16-dark","base16-light","bespin","blackboard",
+    "cobalt","colorforth","darcula","dracula","duotone-dark","duotone-light",
+    "eclipse","elegant","erlang-dark","gruvbox-dark","hopscotch","icecoder",
+    "idea","isotope","juejin","lesser-dark","liquibyte","lucario",
+    "material-darker","material-ocean","material-palenight","material","mbo",
+    "mdn-like","midnight","monokai","moxer","neat","neo","night","nord",
+    "oceanic-next","panda-syntax","paraiso-dark","paraiso-light",
+    "pastel-on-dark","railscasts","rubyblue","seti","shadowfox","solarized",
+    "ssms","the-matrix","tomorrow-night-bright","tomorrow-night-eighties",
+    "ttcn","twilight","vibrant-ink","xq-dark","xq-light","yeti","yonce",
+    "zenburn",
+]
+
 print(disclaimer := """
 Disclaimer: This software is provided "as is" and without warranties of 
 any kind, whether express or implied, including, but not limited to, the 
@@ -336,7 +351,11 @@ def provide_selection() -> dict:
 
     selected_theme = "cosmo"
     if hasattr(current_user, 'selected_theme'):
-        selected_theme = current_user.selected_theme
+        selected_theme = current_user.selected_theme or "default"
+    
+    selected_editor_theme = "isotope"
+    if hasattr(current_user, 'selected_theme'):
+        selected_editor_theme = current_user.selected_editor_theme or "default"
 
     return {
         "app": app,
@@ -345,18 +364,26 @@ def provide_selection() -> dict:
         "PERMISSION_MAP": app.models.core.PERMISSION_MAP,
         "PERMISSION_ENUM": app.models.core.PERMISSION_ENUM,
         "themes": BOOTSWATCH_THEMES,
+        "editor_themes": EDITOR_THEMES,
         "selected_theme": selected_theme,
+        "selected_editor_theme" : selected_editor_theme,
         "models": app.models
     }
 
 @app.route('/apply_theme', methods=['POST'])
 def apply_theme():
-    if current_user.is_authenticated:
-        selected_theme = request.form.get('theme')
-        current_user.selected_theme = selected_theme
-        db.session.commit()
-        return redirect(request.referrer or '/')
-    return redirect(url_for('login'))
+    print(request.form)
+    selected_theme = request.form.get('theme')
+    current_user.selected_theme = selected_theme
+    db.session.commit()
+    return redirect(request.referrer or '/')
+
+@app.route('/apply_editor_theme', methods=['POST'])
+def apply_editor_theme():
+    selected_editor_theme = request.form.get('editor_theme')
+    current_user.selected_editor_theme = selected_editor_theme
+    db.session.commit()
+    return redirect(request.referrer or '/')
 
 @app.route('/usermeta')
 def usermeta():

@@ -76,3 +76,12 @@ class ScheduleTriggerForm(FlaskForm):
     minutes = IntegerField("Minutes", validators=[Optional(), NumberRange(min=0)])
     hours = IntegerField("Hours", validators=[Optional(), NumberRange(min=0)])
     submit = SubmitField('Save Scheduled Trigger')
+
+class EditScriptForm(FlaskForm):
+    name = StringField("Name", validators=[DataRequired()])
+    description = TextAreaField("Description ", validators=[Optional()])
+    details = TextAreaField("Details", validators=[Optional()])
+    network_enabled = BooleanField("Network Enabled", default=True)
+    environment = TextAreaField("Environment Variables (ENV)", validators=[Optional()])
+    script = TextAreaField("Script (Python)", validators=[Optional()])
+    submit = SubmitField('Save Script')

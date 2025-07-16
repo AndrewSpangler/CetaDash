@@ -1,0 +1,71 @@
+{% from "macros/docker.html" import
+  script_log_table,
+  script_scheduled_log_table,
+  script_edit_log_link
+  with context
+%}
+
+{% set obj = script %}
+{% set back_url =  url_for("docker.scripts.index") %}
+{% set back_text = "Back to Scripts" %}
+{% set page_title = script.name %}
+{% set edit_button_text = "Edit Script" %}
+{% set edit_button_url = "docker.scripts.edit" %}
+{% set edit_button_args = {"script_id":script.id} %}
+
+{% set log_url_callback = script_edit_log_link %}
+
+{% extends "pages/editable_page.html" %}
+{% block title %}View Script{% endblock %}
+
+{% block view_content %}
+{% autoescape false %}
+
+{{
+  (
+    (
+      "Script"
+        | b
+        | bs.card_header("bg-dark text-white")
+      ~ (
+        (script.script or "")
+          | cm.python_editor(id="script")
+        ~ (
+          "Script to be containerized."
+        ) | div("text-secondary fst-italic px-2 mx-2 py-2 mx-2")
+      ) | bs.card_body("px-0 py-0")
+    ),
+    (
+      "Environment"
+        | b
+        | bs.card_header("bg-dark text-white")
+      ~ (
+        (script.environment or "")
+          | cm.env_viewer(id="environment", theme=selected_editor_theme)
+        ~ (
+          "Environment variables defined here will "
+          "be applied to the Script and here may be overridden by variables "
+          "set in Triggers, Schedules, Listeners, Workflows, and Tasks."
+        ) | div("text-secondary fst-italic px-2 mx-2 py-2 mx-2")
+      ) | bs.card_body("px-0 py-0")
+    )
+  ) | acc(bs.card, classes="px-0")
+    | jacc(bs.col_md_6, classes="col-sm-12 px-0 mb-2 pb-0")
+    | bs.row("justify-content-around")
+    | bs.card_body("mt-0 pt-1 pb-0")
+    | cd.section_card("script-configuration", "Configuration Files")
+  
+  ~ script_log_table(script)
+    | cd.section_card("logs", "Run Logs")
+  
+  ~ script_scheduled_log_table(script)
+    | cd.section_card("scheduled-logs", "Scheduled Run Logs")
+}}
+
+{% endautoescape %}
+{% endblock %}
+
+{#
+~ script_task_association_table(script)
+  | cd.section_card("script-tasks", "Associated Tasks")
+#}

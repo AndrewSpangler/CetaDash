@@ -1,14 +1,14 @@
  - containerized script runner (py, js, lua) [network optional]
 
-
-
+- have cetadash create a local docker network
+docker networks tab
 Fix save buttons
 
 
 make clicking on trigger endpoint copy to clipboard instead of opening
 
 
-
+TASKS "EXTERNALLY MANAGED" by script runner
 
 
 add action buttons to container view page

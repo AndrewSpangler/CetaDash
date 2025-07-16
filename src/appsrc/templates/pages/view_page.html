@@ -27,11 +27,6 @@
 {% endmacro %}
 
 
-{% block styles %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/theme/monokai.min.css">
-{% endblock %}
-
 {% block content %}
 {% autoescape false %}
 {{
@@ -43,10 +38,4 @@
 </div>
 {{ cd.container_end() }}
 {% endautoescape %}
-{% endblock %}
-
-{% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/yaml/yaml.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/properties/properties.min.js"></script>
 {% endblock %}
