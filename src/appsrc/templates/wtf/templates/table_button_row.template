@@ -1,0 +1,5 @@
+{{
+  content
+    | div(style="display: flex; flex-wrap: nowrap; gap: 0.0rem; align-items: center;")
+    | safe
+}}

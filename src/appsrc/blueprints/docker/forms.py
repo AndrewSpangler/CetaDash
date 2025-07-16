@@ -49,7 +49,8 @@ class TriggerForm(FlaskForm):
     details = TextAreaField('Details (MD + HTML)')
     headers = TextAreaField('Proxy Headers Translation (YAML)')
     environment = TextAreaField("Environment Variables (ENV)", validators=[Optional()])
-    workflow_id = SelectField("Workflow", coerce=int)
+    enabled = BooleanField("Enabled", default=True)
+    workflow = QuerySelectField("Workflow", query_factory=query_workflows, get_label="name", allow_blank=False)
     submit = SubmitField('Save Workflow Trigger')
 
 

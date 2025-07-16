@@ -1,5 +1,5 @@
 <table 
-  class="table table-striped table-hoverable table-sm"
+  class="table table-striped table-hoverable table-sm nowrap"
   id="{{name}}_{% if custom_script %}customtable{% else %}table{% endif %}" width="100%"
 >
   <thead>

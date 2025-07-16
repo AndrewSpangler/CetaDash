@@ -47,36 +47,35 @@ def index():
         "workflows",
         title = "Docker Workflows",
         columns = [
-            "[ID] Name",
-            "Created",
-            "Creator",
+            "Workflow",
+            "Actions",
+            # "Created",
+            # "Creator",
             "Updated",
-            "Editor",
+            # "Editor",
         ],
         rows = [
             (
-                app.wtf.span(
-                    f"<a href=\"{url_for('docker.workflows.view', workflow_id=workflow.id)}\">[{workflow.id}] {workflow.name}</a>"
-                    + app.wtf.br() + app.wtf.span(
-                        make_table_icon_button(
-                            ((f'docker.workflows.edit',),{'workflow_id':workflow.id}),
-                            classes=[f"bi-pencil"],
-                            tooltip='Edit Workflow',
-                            method="GET"
-                        ) + make_table_icon_button(
-                            ((f'docker.workflows.delete',),{'workflow_id':workflow.id}),
-                            classes=[f"bi-trash"],
-                            tooltip='Delete Workflow'
-                        ),
-                        style="display: inline-block;",
-                        classes="float-right"
-                    ),
-                    classes="d-flex justify-content-between"
+                app.wtf.a(
+                    f"[{workflow.id}] {workflow.name}",
+                    href=url_for('docker.workflows.view', workflow_id=workflow.id)
                 ),
-                workflow.created_at_pretty,
-                workflow.creator.name,
+                app.wtf.cd.table_button_row(
+                    app.wtf.cd.table_icon_button(
+                        ('docker.workflows.edit',{'workflow_id':workflow.id}),
+                        classes="bi-pencil",
+                        tooltip='Edit Workflow',
+                        method="GET"
+                    ) + app.wtf.cd.table_icon_button(
+                        ('docker.workflows.delete',{'workflow_id':workflow.id}),
+                        classes="bi-trash",
+                        tooltip='Delete Workflow'
+                    )
+                ),
+                # workflow.created_at_pretty,
+                # workflow.creator.name,
                 workflow.edited_at_pretty,
-                workflow.last_editor.name,
+                # workflow.last_editor.name,
             )
             for workflow in workflows 
         ],

@@ -48,35 +48,34 @@ def index():
         title = "Workflow Tasks",
         columns = [
             "[ID] Name",
-            "Created",
-            "Creator",
+            "Actions",
+            # "Created",
+            # "Creator",
             "Updated",
-            "Editor" 
+            # "Editor" 
         ],
         rows = [
             (
-                app.wtf.span(
-                    f"""<a href="{url_for('docker.tasks.view', task_id=task.id)}">[{task.id}] {task.name}</a>"""
-                    + app.wtf.br() + app.wtf.span(
-                        make_table_icon_button(
-                            ((f'docker.tasks.edit',),{'task_id':task.id}),
-                            classes=[f"bi-pencil"],
-                            tooltip='Edit Task',
-                            method="GET"
-                        ) + make_table_icon_button(
-                            ((f'docker.tasks.delete',),{'task_id':task.id}),
-                            classes=[f"bi-trash"],
-                            tooltip='Delete Task'
-                        ),
-                        style="display: inline-block;",
-                        classes="float-right"
-                    ),
-                    classes="d-flex justify-content-between"
+                app.wtf.a(
+                    f"[{task.id}] {task.name}",
+                    href=url_for('docker.tasks.view', task_id=task.id),                    
                 ),
-                task.created_at_pretty,
-                task.creator.name,
+                app.wtf.cd.table_button_row( 
+                    app.wtf.cd.table_icon_button(
+                        ('docker.tasks.edit',{'task_id':task.id}),
+                        classes="bi-pencil",
+                        tooltip='Edit Task',
+                        method="GET"
+                    ) + app.wtf.cd.table_icon_button(
+                        ('docker.tasks.delete',{'task_id':task.id}),
+                        classes="bi-trash",
+                        tooltip='Delete Task'
+                    )
+                ),
+                # task.created_at_pretty,
+                # task.creator.name,
                 task.edited_at_pretty,
-                task.last_editor.name
+                # task.last_editor.name
             )
             for task in tasks 
         ],

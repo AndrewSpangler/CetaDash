@@ -8,14 +8,19 @@
   (
     form.name
       | wtff.string_field(placeholder="Name Cannot Be Blank"),
-    form.workflow_id
+    form.workflow
       | wtff.dropdown_field
   ) | jacc(bs.col, classes="mb-0"),
   
-  form.endpoint
-    | wtff.string_field(placeholder="Trigger Endpoint (/docker/triggers/{endpoint})")
-    | bs.col("mb-0"),
-
+  (
+    form.endpoint
+      | wtff.string_field(
+        placeholder="Trigger Endpoint (/docker/triggers/{endpoint})"
+      ),
+    form.enabled
+      | wtff.toggle_field
+  ) | jacc(bs.col, classes="mb-0"),
+  
   (
     form.details 
       | mde.md_field,

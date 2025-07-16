@@ -1,0 +1,14 @@
+{{
+  cd.table_button(
+    "",
+    url_args=url_args,
+    on_submit=on_submit,
+    btn_type=btn_type,
+    classes=classes+" big-icon text-normal",
+    float=float,
+    do_action=do_action,
+    on_click=on_click,
+    tooltip=tooltip,
+    method=method
+  ) | safe
+}}

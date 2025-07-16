@@ -5,7 +5,6 @@ import threading
 from functools import wraps
 from ....modules.parsing import (
     make_table_button,
-    make_table_icon_button,
     make_table_page
 )
 from flask import (
@@ -59,12 +58,13 @@ def index():
         title = "Scheduled Triggers",
         columns = [
             "[ID] Name",
-            "Status",
+            # "Status",
             "Actions",
-            "Created",
-            "Creator",
+            # "Created",
+            # "Creator",
+            "Config",
             "Updated",
-            "Editor",
+            # "Editor",
         ],
         rows = [ 
             (
@@ -72,29 +72,34 @@ def index():
                     f"[{trigger.id}] {trigger.name}",
                     href=url_for('docker.scheduler.view', trigger_id=trigger.id)
                 ),
-                app.wtf.bs.badge(
-                    ["Disabled","Enabled"][trigger.enabled],
-                    classes="badge-pill "+["bg-danger", "bg-success"][trigger.enabled]
+                # app.wtf.bs.badge(
+                #     ["Disabled","Enabled"][trigger.enabled],
+                #     classes="badge-pill "+["bg-danger", "bg-success"][trigger.enabled]
+                # ),
+                app.wtf.cd.table_button_row(
+                    app.wtf.cd.table_icon_button(
+                        ('docker.scheduler.toggle_trigger',{'trigger_id':trigger.id}),
+                        classes=["bi-toggle-off text-danger", "bi-toggle-on text-success"][trigger.enabled],
+                        tooltip=f'Toggle Schedule {"Off" if trigger.enabled else "On"} \
+                            [Currently {"Enabled" if trigger.enabled else "Disabled"}]',
+                        method="POST"
+                    ) + app.wtf.cd.table_icon_button(
+                        ('docker.scheduler.edit',{'trigger_id':trigger.id}),
+                        classes="bi-pencil",
+                        tooltip='Edit Trigger',
+                        method="GET"
+                    ) + app.wtf.cd.table_icon_button(
+                        ('docker.scheduler.delete',{'trigger_id':trigger.id}),
+                        classes="bi-trash",
+                        tooltip='Delete Trigger',
+                    )
                 ),
-                make_table_icon_button(
-                    ((f'docker.scheduler.toggle_trigger',),{'trigger_id':trigger.id}),
-                    classes=[["bi-toggle-off", "bi-toggle-on"][trigger.enabled]],
-                    tooltip='Toggle Trigger',
-                    method="POST"
-                ) + make_table_icon_button(
-                    ((f'docker.scheduler.edit',),{'trigger_id':trigger.id}),
-                    classes=["bi-pencil"],
-                    tooltip='Edit Trigger',
-                    method="GET"
-                ) + make_table_icon_button(
-                    ((f'docker.scheduler.delete',),{'trigger_id':trigger.id}),
-                    classes=["bi-trash"],
-                    tooltip='Delete Trigger',
-                ),
-                trigger.created_at_pretty,
-                trigger.creator.name,
+                # trigger.created_at_pretty,
+                # trigger.creator.name,
+                trigger.schedule_string,
                 trigger.edited_at_pretty,
-                trigger.last_editor.name,
+                
+                # trigger.last_editor.name,
             )
             for trigger in triggers 
         ],
@@ -247,7 +252,7 @@ def edit(trigger_id):
             "name": form.name.data,
             "description": form.description.data,
             "details": form.details.data,
-            "workflow_id": form.workflow.data.id,
+            "workflow_id": workflow.id,
             "last_editor_id": current_user.id,
             "edited_at": datetime.datetime.utcnow(),
             "headers": form.headers.data,

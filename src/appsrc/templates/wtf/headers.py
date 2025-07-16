@@ -5,6 +5,7 @@ prefix = "cd"
 
 
 def anchor(id=""): pass
+
 def bicon(icon=""): pass
 def back_link(content="", url=""): pass
 def container_end(): pass
@@ -34,13 +35,26 @@ def table_button(
   url_args=("",{}),
   on_submit=None,
   btn_type="success",
-  classes=[],
+  classes="",
   float="left",
   do_action=True,
   on_click=None,
   tooltip=None,
   method="POST"
 ): pass
+def table_icon_button(
+    url_args:tuple[list, dict],
+    on_submit:str=None,
+    btn_type:str="transparent",
+    classes:list[str]=[],
+    float:str="left",
+    do_action:bool=True,
+    on_click:str=None,
+    tooltip:str=None, 
+    method:str="POST" 
+): pass
+def table_button_row(content=""): pass
+
 
 def table_head(items="", id="", classes=""): pass
 def table_row(items="", id="", classes=""): pass

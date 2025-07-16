@@ -19,10 +19,11 @@
   data-bs-html="true"
   title="{{tooltip}}"
 {% endif %}
-class="btn btn-{{btn_type}} table-button {% if tooltip %}table-tooltip{% endif %} {{' '.join(classes)}}"
+class="btn btn-{{btn_type}} table-button {% if tooltip %}table-tooltip{% endif %} {{classes}}"
 style="float:{{float}};">
 {{text}}
 </button>
 {% if do_action %}
 </form>
 {% endif %}
+

@@ -380,6 +380,7 @@ class WorkflowTrigger(BaseEditable):
             cascade="save-update, merge, refresh-expire, expunge"
         )
     )
+    enabled = db.Column(db.Boolean, default=True)
 
     def log_edit(self, user_id: int, action: int = ACTION_ENUM.MODIFY, **kw):
         return super().log_edit(

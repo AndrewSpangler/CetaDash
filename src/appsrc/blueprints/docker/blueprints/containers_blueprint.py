@@ -128,46 +128,44 @@ def index():
         title = "Docker Containers",
         columns = [
             "Name",
-            "Image",
             "State",
-            "Created",
+            "Image",
+            # "Created",
         ],
         rows = [
                 (
-                    app.wtf.span(
-                        f"<a href=\'{url_for('docker.containers.view', container_id=container['Id'])}\'>"+container["Names"][0].strip("/")
-                        + app.wtf.br() + app.wtf.span(
-                            make_table_icon_button(
-                                ((f'',),{}),
+                    app.wtf.a(
+                        container["Names"][0].strip("/"),
+                        href=url_for('docker.containers.view', container_id=container['Id'])
+                    )
+                    + app.wtf.cd.table_button_row(
+                        app.wtf.cd.table_icon_button(
+                            ('',{}),
+                            btn_type="transparent",
+                            classes="bi-list-columns-reverse",
+                            on_click=f"openIframeModal('Logs for {container['Names'][0].strip('/')}: {container['Image']}', '{url_for('docker.containers.logsframe', container_id=container['Id'])}')",
+                            do_action=False,
+                            tooltip='View Logs'
+                        ) + "".join(
+                            app.wtf.cd.table_icon_button(
+                                ('',{}),
                                 btn_type="transparent",
-                                classes=["bi-list-columns-reverse"],
-                                on_click=f"openIframeModal('Logs for {container['Names'][0].strip('/')}: {container['Image']}', '{url_for('docker.containers.logsframe', container_id=container['Id'])}')",
+                                classes=f"bi-{icon}",
+                                on_click=(
+                                    f"if (confirm('Are you sure you want to run \\'{text}\\' on container {container['Names'][0]}?')) "
+                                    f"openIframeModal('Task {' '.join(action.split('_')).capitalize()} | {container['Names'][0]}: {container['Image']}', "
+                                    f"'{url_for('docker.containers.actionframe', container_id=container['Id'],action=action)}')"
+                                ),
                                 do_action=False,
-                                tooltip='View Logs'
-                            ) + "".join(
-                                make_table_icon_button(
-                                    ((f'',),{}),
-                                    btn_type="transparent",
-                                    classes=[f"bi-{icon}"],
-                                    on_click=(
-                                        f"if (confirm('Are you sure you want to run \\'{text}\\' on container {container['Names'][0]}?')) "
-                                        f"openIframeModal('Task {' '.join(action.split('_')).capitalize()} | {container['Names'][0]}: {container['Image']}', "
-                                        f"'{url_for('docker.containers.actionframe', container_id=container['Id'],action=action)}')"
-                                    ),
-                                    do_action=False,
-                                    tooltip=text
-                                )
-                                for action, (text, icon) 
-                                in container_actions.items()
-                            ),
-                            style="display: inline-block;",
-                            classes="float-right"
+                                tooltip=text
+                            )
+                            for action, (text, icon) 
+                            in container_actions.items()
                         ),
-                        classes="d-flex justify-content-between"
                     ),
-                    container["Image"],
                     container["State"],
-                    app.wtf.pretty_date(datetime.datetime.fromtimestamp(container["Created"])),
+                    container["Image"],
+                    # app.wtf.pretty_date(datetime.datetime.fromtimestamp(container["Created"])),
                 )
             for container in containers  
         ],

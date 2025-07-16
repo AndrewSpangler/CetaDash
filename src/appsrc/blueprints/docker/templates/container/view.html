@@ -89,8 +89,8 @@
   (
     cd.container_header(
       container.name,
-      "docker.containers.index",
-      "Back to containers",
+      back=url_for("docker.containers.index"),
+      back_text="Back to containers",
       value_boxes = [cd.header_value_box({
         "Image" : container.image.tags[0],
         "Created" : pretty_date(from_rfc_timestamp(container_data['Created'])),

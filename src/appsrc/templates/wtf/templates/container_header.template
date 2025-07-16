@@ -4,18 +4,23 @@
       {% if back %}{{ back_text | cd.back_link(back) }}{% endif %}
       {{ cd.header_title(title) }}
       {% if action_buttons %}
-      {% for b in action_buttons %}
-        {{ action_buttons | join | safe }}
-      {% endfor %}
+      {{ 
+        action_buttons
+          | join
+          | safe
+        }}
       {% endif %}
     </div>
   </div>
   {% if header_elements %}
-  <div style="float: right;">
-    {% autoescape false %}{% for elm in header_elements %}{{ elm }}{% endfor %}{% endautoescape %}
-  </div>
+  {{
+    header_elements
+      | join
+      | div(style="float: right;")
+      | safe
+  }}
   {% endif %}
   {% if value_boxes %}
-    {{ value_boxes | join | safe }}
+  {{ value_boxes | join | safe }}
   {% endif %}
 </div>

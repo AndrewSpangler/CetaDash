@@ -4,7 +4,6 @@ import queue
 import threading
 from ....modules.parsing import (
     make_table_button,
-    make_table_icon_button,
     make_table_page
 )
 from flask import (
@@ -54,44 +53,64 @@ def index():
         "triggers",
         title = "Workflow Triggers",
         columns = [
-            "[ID] Name",
+            "Name",
+            # "Status",
+            "Actions",
             "Endpoint",
             "Created",
-            "Creator",
+            # "Creator",
             "Updated",
-            "Editor" 
+            # "Editor" 
         ],
         rows = [
             (
-                app.wtf.span(
-                    f"<a href=\"{url_for('docker.triggers.view', trigger_id=trigger.id)}\">[{trigger.id}] {trigger.name}</a>"
-                    + app.wtf.br() + app.wtf.span(
-                        make_table_icon_button(
-                            ((f'',),{}),
-                            classes=[f"bi-play"],
-                            on_click=f"openIframeModal(`Running Trigger {trigger.name}`, '{url_for('docker.triggers.actionframe', trigger_id=trigger.id)}')",
-                            do_action=False,
-                            tooltip='Run Trigger'
-                        ) + make_table_icon_button(
-                            ((f'docker.triggers.edit',),{'trigger_id':trigger.id}),
-                            classes=[f"bi-pencil"],
-                            tooltip='Edit Trigger',
-                            method="GET"
-                        ) + make_table_icon_button(
-                            ((f'docker.triggers.delete',),{'trigger_id':trigger.id}),
-                            classes=[f"bi-trash"],
-                            tooltip='Delete Trigger'
-                        ),
-                        style="display: inline-block;",
-                        classes="float-right"
-                    ),
-                    classes="d-flex justify-content-between"
+                app.wtf.a(
+                    f"[{trigger.id}] {trigger.name}",
+                    href=url_for('docker.triggers.view', trigger_id=trigger.id),
+                    classes="link-primary"
                 ),
-                f"""<a href="{url_for('docker.triggers.activate', trigger_id=trigger.id)}">{trigger.endpoint}</a>""",
+                # app.wtf.bs.badge(
+                #     ["Disabled","Enabled"][trigger.enabled],
+                #     classes="badge-pill "+["bg-danger", "bg-success"][trigger.enabled]
+                # ),
+                app.wtf.cd.table_button_row(
+                    app.wtf.cd.table_icon_button(
+                        ('docker.triggers.toggle_trigger',{'trigger_id':trigger.id}),
+                        classes=["bi-toggle-off text-danger", "bi-toggle-on text-success"][trigger.enabled],
+                        tooltip=f'Toggle Trigger {"Off" if trigger.enabled else "On"} \
+                            [Currently {"Enabled" if trigger.enabled else "Disabled"}]',
+                        method="POST",
+                        float=None
+                    ) + app.wtf.cd.table_icon_button(
+                        ('',{}),
+                        classes="bi-play",
+                        on_click=f"openIframeModal(`Running Trigger {trigger.name}`, \
+                            '{url_for('docker.triggers.actionframe', trigger_id=trigger.id)}')",
+                        do_action=False,
+                        tooltip='Run Trigger',
+                        float=None
+                    ) + app.wtf.cd.table_icon_button(
+                        ('docker.triggers.edit',{'trigger_id':trigger.id}),
+                        classes="bi-pencil",
+                        tooltip='Edit Trigger',
+                        method="GET",
+                        float=None
+                    ) + app.wtf.cd.table_icon_button(
+                        ('docker.triggers.delete',{'trigger_id':trigger.id}),
+                        classes="bi-trash",
+                        tooltip='Delete Trigger',
+                        float=None
+                    )
+                ),
+                app.wtf.a(
+                    trigger.endpoint,
+                    href=url_for('docker.triggers.activate', trigger_id=trigger.id),
+                    classes="link-secondary"
+                ),
                 trigger.created_at_pretty,
-                trigger.creator.name,
+                # trigger.creator.name,
                 trigger.edited_at_pretty,
-                trigger.last_editor.name,
+                # trigger.last_editor.name,
             )
             for trigger in triggers 
         ],
@@ -104,9 +123,15 @@ def index():
 @app.permission_required(app.models.core.PERMISSION_ENUM.ADMIN)
 def create():
     form = TriggerForm()
-    form.workflow_id.choices = [(w.id, w.name) for w in Workflow.query.order_by(Workflow.name).all()]
+    form.workflow.query_factory = lambda: Workflow.query.order_by(Workflow.name).all()
+
     if form.validate_on_submit():
-        print(form.headers.data, form.environment.data)
+        workflow = form.workflow.data
+
+        if not workflow:
+            flash("You must select a workflow.", "danger")
+            return render_template("scheduler/new.html", form=form, object_type="Workflow Task")
+
         trigger = WorkflowTrigger(
             name=form.name.data,
             endpoint=form.endpoint.data,
@@ -114,9 +139,10 @@ def create():
             details=form.details.data,
             creator_id=current_user.id,
             last_editor_id=current_user.id,
-            workflow_id=form.workflow_id.data,
+            workflow_id=workflow.id,
             headers=form.headers.data,
-            environment=form.environment.data
+            environment=form.environment.data,
+            enabled=form.enabled.data
         )
         db.session.add(trigger)
         db.session.commit()
@@ -133,7 +159,7 @@ def create():
 def edit(trigger_id):
     trigger = WorkflowTrigger.query.get_or_404(trigger_id)
     form = TriggerForm()
-    form.workflow_id.choices = [(w.id, w.name) for w in Workflow.query.order_by(Workflow.name).all()]
+    form.workflow.query_factory = lambda: Workflow.query.order_by(Workflow.name).all()
     
     before = {
         'name': trigger.name,
@@ -144,20 +170,23 @@ def edit(trigger_id):
         "headers": trigger.headers,
         "environment": trigger.environment,
         "last_editor_id": trigger.last_editor_id,
-        "edited_at": trigger.edited_at
+        "edited_at": trigger.edited_at,
+        "enabled" : trigger.enabled
     }
     
     if request.method == "POST" and form.validate_on_submit():
+        workflow = form.workflow.data
         after = {
             "name": form.name.data,
             "description": form.description.data,
             "details": form.details.data,
             "endpoint": form.endpoint.data,
-            "workflow_id": form.workflow_id.data,
+            "workflow_id": workflow.id,
             "last_editor_id": current_user.id,
             "edited_at": datetime.datetime.utcnow(),
             "headers": form.headers.data,
             "environment": form.environment.data,
+            "enabled": form.enabled.data
         }
         print(after)
         for k, v in after.items():
@@ -229,6 +258,9 @@ def activate(trigger_id):
     request_headers = request.headers
     result_queue = queue.Queue()
     trigger = WorkflowTrigger.query.get_or_404(trigger_id)
+    if not trigger.enabled:
+        flash("Trigger is not enabled.", 'danger')
+        return redirect(url_for("docker.triggers.index"))
     workflow = Workflow.query.get_or_404(trigger.workflow_id)
     tasks = [
         assoc.task for assoc in 
@@ -267,3 +299,32 @@ def activate(trigger_id):
 @app.permission_required(app.models.core.PERMISSION_ENUM.ADMIN)
 def actionframe(trigger_id):
     return render_template("pages/stream_frame.html", stream_url=url_for("docker.triggers.activate", trigger_id=trigger_id))
+
+
+@blueprint.route('/trigger/<trigger_id>/toggle', methods=['POST'])
+@app.permission_required(app.models.core.PERMISSION_ENUM.ADMIN)
+def toggle_trigger(trigger_id):
+    """Enable or disable a trigger"""
+    trigger = WorkflowTrigger.query.get_or_404(trigger_id)
+    
+    # Toggle the enabled state
+    trigger.enabled = not trigger.enabled
+    trigger.last_editor_id = current_user.id
+    trigger.edited_at = datetime.datetime.utcnow()
+    
+    # Log the change
+    action = ACTION_ENUM.MODIFY
+    message = f"Trigger {'enabled' if trigger.enabled else 'disabled'} by {current_user.name}"
+    trigger.log_edit(current_user.id, action, message=message)
+    
+    db.session.commit()
+    
+    # Update the scheduler
+    try:
+        app.docker_scheduler.update_trigger(trigger)
+        status = 'enabled' if trigger.enabled else 'disabled'
+        flash(f'Trigger {status} successfully!', 'success')
+    except Exception as e:
+        flash(f'Trigger updated in database but failed to update scheduler: {str(e)}', 'warning')
+    
+    return redirect(url_for('docker.triggers.index'))
