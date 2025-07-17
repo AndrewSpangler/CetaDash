@@ -4,6 +4,7 @@
 docker networks tab
 Fix save buttons
 
+option for container to wait until last step is done to spin down
 
 make clicking on trigger endpoint copy to clipboard instead of opening
 
