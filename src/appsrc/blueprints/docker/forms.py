@@ -12,7 +12,7 @@ from wtforms import (
 )
 from wtforms.validators import DataRequired, Length, Optional, NumberRange
 from wtforms_sqlalchemy.fields import QuerySelectField
-from .models import Workflow, ScheduleTrigger
+from .models import Workflow, WorkflowScript, ScheduleTrigger
 
 
 def query_workflows():
@@ -39,6 +39,14 @@ class EditWorkflowTaskForm(FlaskForm):
     details = TextAreaField('Details (MD + HTML)')
     template = TextAreaField('Template (YAML + JINJA)')
     environment = TextAreaField('Environment Variables (ENV)')
+    use_script = BooleanField("Use Script")
+
+    script = QuerySelectField(
+        "Script",
+        query_factory=lambda: WorkflowScript.query.all(),
+        allow_blank=True,
+        get_label="name"
+    )
     submit = SubmitField('Save Changes')
 
 
@@ -102,9 +110,9 @@ class EditScriptForm(FlaskForm):
         "Language",
         choices=[
             ("python", "Python"),
-            ("bash", "Bash"),
-            ("javascript", "JavaScript"),
-            ("powershell", "Powershell")
+            # ("bash", "Bash"),
+            # ("javascript", "JavaScript"),
+            # ("powershell", "Powershell")
         ],
         default="python",
         validators=[DataRequired()]

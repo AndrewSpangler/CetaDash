@@ -39,6 +39,16 @@ class WorkflowTask(BaseEditable):
     environment = db.Column(db.Text)
     use_script = db.Column(db.Boolean, default=False)
 
+    script_id = db.Column(
+        db.Integer,
+        db.ForeignKey('WorkflowScript.id', ondelete='SET NULL'),
+        nullable=True
+    )
+    script = db.relationship(
+        'WorkflowScript',
+        backref=db.backref('task', uselist=False)
+    )
+
     def log_edit(
         self,
         user_id:int,
@@ -132,6 +142,7 @@ class WorkflowTaskRunLog(BaseActionLog):
         )
     )
 
+
 class WorkflowTaskScheduledRunLog(BaseActionLog):
     __tablename__ = "WorkflowTaskScheduledRunLog"
     __bind_key__ = "cetadash_db"
@@ -166,6 +177,7 @@ class WorkflowTaskScheduledRunLog(BaseActionLog):
             cascade="all, delete-orphan"
         )
     )
+
 
 ####################
 # Workflows
@@ -297,6 +309,7 @@ class WorkflowRunLog(BaseActionLog):
         )
     )
 
+
 class WorkflowScheduledRunLog(BaseActionLog):
     """Logs for scheduled triggers"""
     __tablename__ = "WorkflowScheduledRunLog"
@@ -399,6 +412,7 @@ class WorkflowTrigger(BaseEditable):
             trigger_id=self.id,
             **kw
         )
+
 
 class WorkflowTriggerEditLog(BaseEditLog):
     __tablename__ = "WorkflowTriggerEditLog"
@@ -616,7 +630,7 @@ class WorkflowScript(BaseEditable):
     def log_run(
         self,
         user_id:int,
-        workflow_log_id:int,
+        task_log_id:int,
         status:int = STATUS_ENUM.RUNNING
     ):
         return super().log_run(
@@ -624,12 +638,12 @@ class WorkflowScript(BaseEditable):
             user_id,
             status=status,
             script_id=self.id,
-            workflow_log_id=workflow_log_id
+            task_log_id=task_log_id
         )
     
     def log_scheduled_run(
         self,
-        workflow_log_id:int,
+        task_log_id:int,
         status:int = STATUS_ENUM.RUNNING
     ):
         return super().log_run(
@@ -637,7 +651,7 @@ class WorkflowScript(BaseEditable):
             SYSTEM_ID,
             status=status,
             script_id=self.id,
-            workflow_log_id=workflow_log_id
+            task_log_id=task_log_id
         )
 
 
@@ -658,6 +672,7 @@ class WorkflowScriptEditLog(BaseEditLog):
             cascade="all, delete-orphan"
         )
     )
+
 
 class WorkflowScriptRunLog(BaseActionLog):
     __tablename__ = "WorkflowScriptRunLog"
@@ -727,7 +742,6 @@ class WorkflowScriptScheduledRunLog(BaseActionLog):
             cascade="all, delete-orphan"
         )
     )
-
 
 
 # Test data and init_db function remain the same...

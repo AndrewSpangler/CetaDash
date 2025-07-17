@@ -92,7 +92,9 @@ def create():
             template=form.template.data,
             environment=form.environment.data,
             description=form.description.data,
-            details=form.details.data
+            details=form.details.data,
+            use_script=form.use_script.data,
+            script=form.script.data
         )
         db.session.add(workflowtask)
         db.session.commit()
@@ -115,6 +117,8 @@ def edit(task_id):
         "environment" : workflowtask.environment,
         "description" : workflowtask.description,
         "details" : workflowtask.details,
+        "use_script": workflowtask.use_script,
+        "script": workflowtask.script
     }
 
     if request.method == "POST" and form.validate_on_submit():
@@ -126,6 +130,8 @@ def edit(task_id):
             "environment": form.environment.data,
             "description": form.description.data,
             "details": form.details.data,
+            "use_script": form.use_script.data,
+            "script": form.script.data
         }
         for k, v in after.items():
             setattr(workflowtask, k, v)

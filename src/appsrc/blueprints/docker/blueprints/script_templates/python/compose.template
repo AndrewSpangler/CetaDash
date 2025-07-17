@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  cetadash-task-{{session_id}}:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-builder}
+    container_name: cetadash-task-{{session_id}}
+    environment:
+      - SESSION_ID={{session_id}}
+      - TASK_ID={{task_id}}
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env
+    working_dir: /cetadash-compose/{{session_id}}
+    restart: "no"
+    {% if network_enabled %}
+    network_mode: bridge
+    {% else %}
+    network_mode: none
+    {% endif %}

@@ -23,6 +23,12 @@
       | cd.note,
   ) | jacc(bs.col, classes="mb-0 mt-2"),
   (
+    form.use_script
+      | wtff.toggle_field,
+    form.script
+      | wtff.dropdown_field      
+  ) | jacc(bs.col, classes="mb-0 mt-2"),
+  (
     form.template
       | cm.yaml_field(theme=selected_editor_theme)
     ~ (
@@ -36,4 +42,35 @@
 
 {% endautoescape %}
 {% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const useScriptToggle = document.querySelector('#use_script');
+    const scriptFieldCol = document.querySelector('#script')?.closest('.col');
+    const templateTextarea = document.querySelector('#template');
+    const templateCol = templateTextarea?.closest('.col');
 
+    function toggleFields() {
+      const useScript = useScriptToggle.checked;
+
+      if (useScript) {
+        if (scriptFieldCol) scriptFieldCol.style.display = 'block';
+        if (templateCol) templateCol.style.display = 'none';
+
+        // Clear template editor via CodeMirror API
+        if (window.cm_editors?.template) {
+          window.cm_editors.template.setValue('');
+        }
+
+      } else {
+        if (scriptFieldCol) scriptFieldCol.style.display = 'none';
+        if (templateCol) templateCol.style.display = 'block';
+      }
+    }
+
+    useScriptToggle.addEventListener('change', toggleFields);
+    toggleFields(); // Run once on load
+  });
+</script>
+{% endblock %}

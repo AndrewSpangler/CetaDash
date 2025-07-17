@@ -22,43 +22,106 @@
 {% block view_content %}
 {% autoescape false %}
 
+
+{% macro make_script_card(script) %}
+  <h5 class="mb-2">
+    Script: 
+    <a href="{{url_for('docker.scripts.view', script_id=script.id)}}" class="text-decoration-none">
+      [{{ script.id }}] {{ script.name }}
+    </a>
+    <span class="fs-5">
+      @ {{ script.language.title() }}
+    </span>
+  </h5>
+{% endmacro %}
+
+{% macro make_task_card(task) %}
+  <h5 class="mb-2">
+    <span class="fs-5">
+      Docker
+    </span>
+  </h5>
+{% endmacro %}
+
+{% macro make_enabled_badge(script) %}
+  {% if script.network_enabled %}
+  {{ "Network Enabled" | bs.badge(classes="bg-success") | safe }}
+  {% else %}
+  {{ "Network Disabled" | bs.badge(classes="bg-warning") | safe }}
+  {% endif %}
+{% endmacro %}
+
 {{
+  
   (
+
     (
-      "Template"
-        | b
-        | bs.card_header("bg-dark text-white")
-      ~ (
-        (task.template or "")
-          | cm.yaml_viewer(id="template", theme=selected_editor_theme)
-        ~ (
-          "Docker Compose template. Variables from Triggers "
-          " / Schedulers / Listeners may be used in the template "
-          "with {{trigger_variable}}, environment variables "
-          "can be used with ${env_variable}. "
-        ) | div("text-secondary fst-italic px-2 mx-2 py-2 mx-2")
-      ) | bs.card_body("px-0 py-0")
-    ),
-    (
-      "Environment"
-        | b
-        | bs.card_header("bg-dark text-white")
-      ~ (
-        (task.environment or "")
-          | cm.env_viewer(id="environment", theme=selected_editor_theme)
-        ~ (
-          "Environment variables defined here will "
-          "be applied to to the Task. "
-          "Variables defined here may be overridden by variables "
-          "set in Triggers, Schedules, or Listeners."
-        ) | div("text-secondary fst-italic px-2 mx-2 py-2 mx-2")
-      ) | bs.card_body("px-0 py-0")
-    )
-  ) | acc(bs.card, classes="px-0")
-    | jacc(bs.col_md_6, classes="col-sm-12 px-0 mb-2 pb-0")
-    | bs.row("justify-content-around")
-    | bs.card_body("mt-0 pt-1 pb-0")
-    | cd.section_card("task-configuration", "Configuration Files")
+      (
+        make_script_card(task.script)
+        ~ make_enabled_badge(task.script)
+          | div("text-end")
+      )
+      if task.use_script
+      else make_task_card(task)
+    ) | div("d-flex justify-content-between align-items-start")
+      | div("card-info")
+      | bs.card_body("pb-1 pt-0 px-0")
+      | bs.col_12("px-0")
+      | bs.row
+
+    ~(
+
+      (
+        ("Script" if task.use_script else "Template")
+          | b
+          | bs.card_header("bg-dark text-white")
+        ~(
+          (
+            (
+              (task.script.script or "")
+                | cm.python_viewer(id="script", theme=selected_editor_theme)
+            ) if task.use_script
+            else (
+              (task.template or "")
+                | cm.yaml_viewer(id="template", theme=selected_editor_theme)
+            )
+          )
+          
+          ~(
+              "Script to containerize. Task scripts cannot be templated (yet)."
+              if task.use_script
+              else (
+                "Docker Compose template. Variables from Triggers "
+                " / Schedulers / Listeners may be used in the template "
+                "with {{trigger_variable}}, environment variables "
+                "can be used with ${env_variable}. "
+              )
+          ) | div("text-secondary fst-italic px-2 mx-2 py-2 mx-2")
+        ) | bs.card_body("px-0 py-0")
+      ),
+
+      (
+        "Environment"
+          | b
+          | bs.card_header("bg-dark text-white")
+        ~(
+          (task.environment or "")
+            | cm.env_viewer(id="environment", theme=selected_editor_theme)
+          ~(
+            "Environment variables defined here will "
+            "be applied to to the Task. "
+            "Variables defined here may be overridden by variables "
+            "set in Triggers, Schedules, or Listeners."
+          ) | div("text-secondary fst-italic px-2 mx-2 py-2 mx-2")
+        ) | bs.card_body("px-0 py-0")
+      )
+
+    ) | acc(bs.card, classes="pt-0")
+      | jacc(bs.col_md_6, classes="col-sm-12 px-0 mb-2 pb-0 mt-2")
+      | bs.row("justify-content-around")
+    
+  ) | bs.card_body("mt-0 pt-1 pb-0")
+    | cd.section_card("task-configuration", "Configuration", classes="mt-0 py-0 pb-0")
   
   ~ task_workflow_association_table(task)
     | cd.section_card("task-workflows", "Associated Workflows")

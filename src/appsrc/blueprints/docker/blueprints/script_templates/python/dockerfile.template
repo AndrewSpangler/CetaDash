@@ -1,0 +1,40 @@
+# syntax=docker/dockerfile:1.4
+FROM --platform=$BUILDPLATFORM python:3.10-alpine AS builder
+
+WORKDIR /cetadash-compose/{{session_id}}
+
+# Install system dependencies
+RUN apk add --no-cache \
+    python3-dev \
+    musl-dev \
+    linux-headers \
+    gcc \
+    g++ \
+    make
+
+# Copy requirements if they exist and install Python dependencies
+COPY requirements.tx[t] /cetadash-compose/{{session_id}}/
+RUN if [ -f requirements.txt ]; then \
+    pip3 install --no-cache-dir -r requirements.txt; \
+    fi
+
+# Copy application code
+COPY . /cetadash-compose/{{session_id}}/
+
+# Create a non-root user for security
+RUN adduser -D -s /bin/sh cetauser
+USER cetauser
+
+ENTRYPOINT ["python3", "-u", "main.py"]
+
+FROM builder as dev-envs
+
+# Install development tools
+USER root
+RUN apk add --no-cache git
+
+# Switch back to non-root user
+USER cetauser
+
+# Set working directory
+WORKDIR /cetadash-compose/{{session_id}}

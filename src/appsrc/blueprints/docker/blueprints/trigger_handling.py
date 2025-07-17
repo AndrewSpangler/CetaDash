@@ -21,6 +21,8 @@ from ..models import (
     WorkflowScheduledRunLog,
     WorkflowTriggerRunLog,
     ScheduleTriggerRunLog,
+    WorkflowScriptRunLog,
+    WorkflowScriptScheduledRunLog,
     ACTION_ENUM,
     STATUS_ENUM
 )
@@ -46,7 +48,14 @@ def parse_environment_variables(env_string: str) -> dict:
 
 def build_layered_environment(trigger, workflow, task):
     """Build environment variables with proper layering (trigger/schedule > workflow > task)"""
-    layered_env = parse_environment_variables(getattr(task, 'environment', '') or '')
+
+    if task.use_script:
+        layered_env = parse_environment_variables(getattr(task.script, 'environment', '') or '')
+        if task.environment and task.environment.strip():
+            task_env = parse_environment_variables(task.environment)
+            layered_env.update(task_env)
+    else:
+        layered_env = parse_environment_variables(getattr(task, 'environment', '') or '')
     
     if workflow.environment and workflow.environment.strip():
         workflow_env = parse_environment_variables(workflow.environment)
@@ -70,7 +79,7 @@ class TemplateRenderer:
 
 
 def get_unique_session():
-    return secrets.token_urlsafe(32)
+    return secrets.token_urlsafe(16).lower()
 
 
 def parse_jinja_variables(headers: str) -> dict:
@@ -88,9 +97,10 @@ def get_trigger_heading_map(headers:str) -> dict:
 
 
 def translate_headers(request_headers:dict, headers_mapping:dict)->dict:
+    print(headers_mapping)
     mapping = {}
     errors = []
-    for k, typ in headers_mapping.items():
+    for k, typ in headers_mapping.get("mappings", {}).items():
         req_val = request_headers.get(k, None)
         if req_val is None and not typ.get("nullable"):
             errors.append(f"Missing required header - {k}")
@@ -203,20 +213,46 @@ def handle_trigger(user_id, trigger, request_headers, workflow, tasks, result_qu
 
     try:
         for task in tasks:
-            
+            script_log = None
             with app.app_context():
+                # Create task log
                 if isinstance(trigger, WorkflowTrigger):
                     task_log = task.log_run(user_id, workflow_log_id=workflow_log_id)
                 elif isinstance(trigger, ScheduleTrigger):
                     task_log = task.log_scheduled_run(workflow_log_id=workflow_log_id)
+                
                 task_log.message = ""
                 db.session.add(task_log)
                 db.session.commit()
+
+                # Make script log if needed
                 if isinstance(trigger, WorkflowTrigger):
                     task_log = WorkflowTaskRunLog.query.get(task_log.id)
+                    if task.use_script:
+                        script_log = task.script.log_run(user_id, task_log_id=task_log.id)
                 elif isinstance(trigger, ScheduleTrigger):
                     task_log = WorkflowTaskScheduledRunLog.query.get(task_log.id)
+                    if task.use_script:
+                        script_log = task.script.log_scheduled_run(task_log_id=task_log.id)
+                
+                if task.use_script:
+                    script_log.message = ""
+                    db.session.add(script_log)
+                    db.session.commit()
+
+                # Refresh after commit for expunge
+                if isinstance(trigger, WorkflowTrigger):
+                    task_log = WorkflowTaskRunLog.query.get(task_log.id)
+                    if task.use_script:
+                        script_log = WorkflowScriptRunLog.query.get(script_log.id)
+                elif isinstance(trigger, ScheduleTrigger):
+                    task_log = WorkflowTaskScheduledRunLog.query.get(task_log.id)
+                    if task.use_script:
+                        script_log = WorkflowScriptScheduledRunLog.query.get(script_log.id)
+
                 db.session.expunge(task_log)
+                if task.use_script:
+                    db.session.expunge(script_log)
 
             write_queue("\n"*2)
             write_workflow_log("="*40)
@@ -233,10 +269,13 @@ def handle_trigger(user_id, trigger, request_headers, workflow, tasks, result_qu
                     session_id,
                     result_queue,
                     task_log,
+                    script_log=script_log,
                     cleanup=cleanup
                 )
                 task_log.status = STATUS_ENUM.SUCCESS
             except Exception as e:
+                import traceback
+                print(traceback.print_exc())
                 task_log.status = STATUS_ENUM.FAILURE
                 success = False
                 message = e
@@ -330,7 +369,6 @@ def up_compose(session, path, result_queue, task_log, cleanup=True):
             write_log(f"🐳🗑️ Removing container {c.name}")
             c.remove(force=True)
     
-
 def handle_task(
     trigger,
     trigger_variables,
@@ -339,16 +377,20 @@ def handle_task(
     session,
     result_queue,
     task_log,
+    script_log=None,
     cleanup=True
 ):
+
     def write_log(msg):
         with app.app_context():
             db.session.merge(task_log)
             task_log.message += msg+"\n"
+            if script_log:
+                db.session.merge(script_log)
+                script_log.message += msg+"\n"
             db.session.commit()
         result_queue.put_nowait(msg)
 
-    template = task.template
     variables_map = trigger_variables.copy()
     variables_map.update({"session_id": session})
     write_log("🖥️🌐 Building layered environment (trigger > workflow > task)")
@@ -359,26 +401,73 @@ def handle_task(
     if layered_env:
         write_log(f"🖥️🔧 Environment variables: {', '.join(layered_env.keys())}")
 
-    write_log("🖥️✏️ Rendering Template")
-    renderer = TemplateRenderer(template, variables_map)
-    rendered_template = renderer.render()  
-    env = task.environment
+    if task.use_script:
+        write_log("🖥️✏️ Rendering Task Script Template")
+        
+        # Get script from task (assuming task has a script attribute)
+        script = task.script
+        template_dir = os.path.join(os.path.dirname(__file__), "script_templates", script.language)
+        if not os.path.exists(template_dir):
+            raise ValueError(f"🖥️❌ Script template directory doesn't exist for language {script.language}")
+        
+        dockerfile_template_path = os.path.join(template_dir, "dockerfile.template")
+        with open(dockerfile_template_path, "r") as f:
+            dockerfile_template = f.read()
+        compose_template_path = os.path.join(template_dir, "compose.template")
+        with open(compose_template_path, "r") as f:
+            compose_template = f.read()
+        
+        try:
+            write_log("🖥️✏️ Rendering Script dockerfile")
+            dockerfile_renderer = TemplateRenderer(dockerfile_template, variables_map)
+            rendered_dockerfile = dockerfile_renderer.render() 
+            
+            # Write dockerfile to session directory
+            dockerfile_location = f"/cetadash-compose/{session}/Dockerfile"
+            os.makedirs(os.path.dirname(dockerfile_location), exist_ok=True)
+            write_log("🖥️💾 Writing Script dockerfile...")
+            with open(dockerfile_location, "w+") as f:
+                f.write(rendered_dockerfile)
+                
+        except Exception as e:
+            write_log(f"🖥️❌ Error rendering dockerfile template {dockerfile_template_path} - {e}")
+            raise
+
+        write_log("🖥️✏️ Rendering Script compose template")
+        renderer = TemplateRenderer(compose_template, variables_map)
+        rendered_template = renderer.render()
+
+        write_log("🖥️✏️ Writing Script to file")
+        main_location = f"/cetadash-compose/{session}/main.py"
+        with open(main_location, "w+") as f:
+            f.write(script.script)
+
+    else:
+        write_log("🖥️✏️ Rendering Task template")
+        renderer = TemplateRenderer(task.template, variables_map)
+        rendered_template = renderer.render()  
 
     try:
         write_log("🖥️📖 Loading compose file from task template")
         loaded_compose = yaml.safe_load(rendered_template)
         
     except Exception as e:
-        write_log(f"🖥️❌ Error loading template {rendered_template}")
+        write_log(f"🖥️❌ Error loading template {rendered_template} - {e}")
         raise
+    
+    # Ensure directory exists
     compose_location = f"/cetadash-compose/{session}/{task.id}.yml"
+    os.makedirs(os.path.dirname(compose_location), exist_ok=True)
+    
     write_log("🖥️💾 Writing compose file...")
     with open(compose_location, "w+") as f:
         yaml.dump(loaded_compose, f, default_flow_style=False, sort_keys=False)
+    
     write_log("🖥️💾 Writing layered env file...")
     env_location = f"/cetadash-compose/{session}/.env"
     with open(env_location, "w+") as f:
         f.write(layered_env_string)
+    
     write_log("🖥️⬆️ Starting containers from compose file...")
     up_compose(
         session,

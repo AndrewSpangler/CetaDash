@@ -64,3 +64,5 @@ loading message in tables?
 COSMETIC:
  - fix bootstrap copy to clipboard popup theme
  - per-user personal theme overrides from db
+
+ Dashboard shows space taken by build system

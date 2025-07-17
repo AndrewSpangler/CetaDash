@@ -31,8 +31,9 @@
 
 {% macro make_trigger_card(trigger) %}
   <h5 class="mb-2">
+    Workflow:
     <a href="{{url_for('docker.workflows.view', workflow_id=trigger.workflow.id)}}" class="text-decoration-none">
-      {{ trigger.workflow.name }}
+      [{{trigger.workflow.id}}] {{ trigger.workflow.name }}
     </a>
     <span class="fs-5">
       @
@@ -75,7 +76,7 @@
       | div("text-end")
   )
     | div("d-flex justify-content-between align-items-start")
-    | div("schedule-info")
+    | div("card-info")
     | bs.card_body(classes="mb-0 pb-1 pt-2 px-0")
   ~(
     (

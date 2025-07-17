@@ -344,3 +344,11 @@ button.dt-paging-button {
 .CodeMirror {
   border: 1px solid #ccc;
 }
+
+
+/* info box on view pages */
+.card-info {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #dee2e6;
+}

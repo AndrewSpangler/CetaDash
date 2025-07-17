@@ -50,7 +50,7 @@ class WorkflowScheduler:
         
         db_url = app.config.get('SQLALCHEMY_BINDS', {}).get('cetadash_db')
         if not db_url:
-            raise ValueError("No database provided to scheduler")
+            raise ValueError("Database not found")
 
         self.scheduler = BackgroundScheduler(
             jobstores={'default': SQLAlchemyJobStore(url=db_url)},
@@ -174,9 +174,30 @@ class WorkflowScheduler:
         if trigger.enabled:
             self.add_schedule_trigger(trigger)
     
+    def clear_all_triggers(self):
+        """Clear all scheduled triggers - useful for preventing duplicates on reload"""
+        try:
+            # Get all trigger jobs
+            trigger_jobs = [job for job in self.scheduler.get_jobs() if job.id.startswith('trigger_')]
+            
+            for job in trigger_jobs:
+                try:
+                    self.scheduler.remove_job(job.id)
+                    self.logger.info(f"Removed job {job.id} during clear")
+                except Exception as e:
+                    self.logger.warning(f"Error removing job {job.id} during clear: {e}")
+                    
+            self.logger.info(f"Cleared {len(trigger_jobs)} scheduled triggers")
+            
+        except Exception as e:
+            self.logger.error(f"Error clearing triggers: {str(e)}")
+    
     def load_all_triggers(self):
         """Load all enabled ScheduleTriggers from database"""
         try:
+            # FIXED: Clear existing triggers first to prevent duplicates
+            self.clear_all_triggers()
+            
             with self.app.app_context():
                 triggers = ScheduleTrigger.query.filter_by(enabled=True).all()
             
@@ -355,7 +376,7 @@ class WorkflowScheduler:
                     self.logger.error(f"Invalid interval configuration for trigger {trigger.id}")
                     return True
                 
-                # Compare with current interval
+
                 existing_seconds = existing_job.trigger.interval.total_seconds()
                 if abs(existing_seconds - expected_seconds) > 1:  # Allow 1 second tolerance
                     self.logger.info(f"Interval changed for trigger {trigger.id}: {existing_seconds}s -> {expected_seconds}s")
@@ -365,7 +386,6 @@ class WorkflowScheduler:
             
         except Exception as e:
             self.logger.warning(f"Error checking if job needs update for trigger {trigger.id}: {str(e)}")
-            # If we can't determine if it needs updating, assume it does
             return True
     
     def get_reload_status(self):
