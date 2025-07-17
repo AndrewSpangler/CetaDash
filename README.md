@@ -4,11 +4,31 @@
 
 ---
 
-## 🚀 Overview
+## ⚠️ Disclaimer!
 
-CetaDash structures orchestration into modular, reusable building blocks. Workflows are composed of **Tasks**, which in turn can run Docker Compose templates or containerized **Scripts**. The system is fully environment-aware and supports layered variable injection for easy configuration and overrides.
+CetaDash is very early in development.
+Use at your own risk and make sure to follow best practices with backups. 
+
 
 ---
+
+## 🚀 Overview
+
+CetaDash structures orchestration into modular, reusable building blocks. Workflows are composed of **Tasks**, which in turn can run Docker Compose templates or containerized **Scripts**. The system supports layered variable injection for easy configuration and overrides. 
+
+---
+
+## 📦 Features
+
+* ✅ Designed for automation, CI/CD pipelines, homelabs, and data processing flows
+* ✅ Rich templating and environment layering
+* ✅ Seamless Docker Compose & Script execution
+* ✅ Easy integration with triggers, schedules, and (soon) event listeners
+* ✅ Customizable UI with independently configurable UI and Code Editor.
+* ✅ Manage your Docker stack (without the Portainer pay-me-for-features hassl)
+* ✅ Written in Python and WTFScript easily extended through Flask blueprinting. 
+* ✅ Built in internal database viewer.
+* ✅ Uses proxy-authentication through a trusted proxy to handle user access / management.
 
 ## 🧹 Orchestration Components
 
@@ -99,16 +119,6 @@ Each orchestration component supports an associated **Environment**, providing a
 
 * Database **Event Listeners** to power reactive workflows.
 * Built-in **Documentation Module** (Docu Plugin) to attach help, API usage, and maintenance notes directly to orchestration components — perfect for homelab and team use.
-
----
-
-## 📦 Why CetaDash?
-
-* ✅ Reusable, modular building blocks
-* ✅ Rich templating and environment layering
-* ✅ Seamless Docker Compose & Script execution
-* ✅ Easy integration with triggers, schedules, and (soon) event listeners
-* ✅ Designed for automation, CI/CD pipelines, homelabs, and data processing flows
 
 ---
 
