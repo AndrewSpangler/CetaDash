@@ -36,8 +36,16 @@
       form.script
         | cm.python_field(theme=selected_editor_theme)
       ~ (
-        "Defines the Python script to run in a containerized environment."
+        "Defines the Script to run in a containerized environment."
         " You cannot use templating in the script (yet)."
+      ) | cd.note
+    ),
+    (
+      form.dependencies
+        | cm.code_field(theme=selected_editor_theme)
+      ~ (
+        "Dependency file for the given script language,"
+        " requirements.txt, package.json, etc "
       ) | cd.note
     ),
   ) | jacc(bs.col, classes="mt-2")

@@ -610,6 +610,7 @@ class WorkflowScript(BaseEditable):
     __bind_key__ = "cetadash_db"
     environment = db.Column(db.Text)
     script = db.Column(db.Text)
+    dependencies = db.Column(db.Text)
     network_enabled = db.Column(db.Boolean, default=True)
     language = db.Column(db.Text, default="python")
    

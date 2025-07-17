@@ -442,6 +442,14 @@ def handle_task(
         with open(main_location, "w+") as f:
             f.write(script.script)
 
+        if script.dependencies.strip():
+            write_log("🖥️✏️ Writing Dependencies to file")
+            requirements_location = f"/cetadash-compose/{session}/requirements.txt"
+            with open(requirements_location, "w+") as f:
+                f.write(script.dependencies)
+        else:
+            write_log("🖥️✏️ No Dependencies to write")
+
     else:
         write_log("🖥️✏️ Rendering Task template")
         renderer = TemplateRenderer(task.template, variables_map)

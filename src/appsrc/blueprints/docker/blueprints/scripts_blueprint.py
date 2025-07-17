@@ -93,7 +93,8 @@ def create():
             environment=form.environment.data,
             description=form.description.data,
             details=form.details.data,
-            network_enabled=form.network_enabled.data
+            network_enabled=form.network_enabled.data,
+            dependencies=form.dependencies.data
         )
         db.session.add(script)
         db.session.commit()
@@ -117,6 +118,7 @@ def edit(script_id):
         "description" : script.description,
         "details" : script.details,
         "network_enabled" : script.network_enabled,
+        "dependencies" : script.dependencies
     }
 
     if request.method == "POST" and form.validate_on_submit():
@@ -129,6 +131,7 @@ def edit(script_id):
             "description": form.description.data,
             "details": form.details.data,
             "network_enabled": form.network_enabled.data,
+            "dependencies": form.dependencies.data,
         }
         for k, v in after.items():
             setattr(script, k, v)

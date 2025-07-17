@@ -105,6 +105,7 @@ class EditScriptForm(FlaskForm):
     details = TextAreaField("Details", validators=[Optional()])
     network_enabled = BooleanField("Network Enabled", default=True)
     environment = TextAreaField("Environment Variables (ENV)", validators=[Optional()])
+    dependencies = TextAreaField("Dependencies", validators=[Optional()])
     script = TextAreaField("Script", validators=[Optional()])
     language = SelectField(
         "Language",
