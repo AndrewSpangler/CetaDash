@@ -50,7 +50,12 @@ class TriggerForm(FlaskForm):
     headers = TextAreaField('Proxy Headers Translation (YAML)')
     environment = TextAreaField("Environment Variables (ENV)", validators=[Optional()])
     enabled = BooleanField("Enabled", default=True)
-    workflow = QuerySelectField("Workflow", query_factory=query_workflows, get_label="name", allow_blank=False)
+    workflow = QuerySelectField(
+        "Workflow",
+        query_factory=query_workflows,
+        get_label="name",
+        allow_blank=False
+    )
     submit = SubmitField('Save Workflow Trigger')
 
 
@@ -61,10 +66,18 @@ class ScheduleTriggerForm(FlaskForm):
     headers = TextAreaField("Jinja Variables (YAML)", validators=[Optional()])
     environment = TextAreaField("Environment Variables (ENV)", validators=[Optional()])
     enabled = BooleanField("Enabled", default=True)
-    workflow = QuerySelectField("Workflow", query_factory=query_workflows, get_label="name", allow_blank=False)
+    workflow = QuerySelectField(
+        "Workflow",
+        query_factory=query_workflows,
+        get_label="name",
+        allow_blank=False
+    )
     job_type = SelectField(
         "Job Type",
-        choices=[("cron", "Cron (e.g. every Wednesday at 2 PM)"), ("interval", "Interval (e.g. every 15 minutes)")],
+        choices=[
+            ("cron", "Cron (e.g. every Wednesday at 2 PM)"),
+            ("interval", "Interval (e.g. every 15 minutes)")
+        ],
         validators=[DataRequired()]
     )
     # cron fields
@@ -77,11 +90,23 @@ class ScheduleTriggerForm(FlaskForm):
     hours = IntegerField("Hours", validators=[Optional(), NumberRange(min=0)])
     submit = SubmitField('Save Scheduled Trigger')
 
+
 class EditScriptForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired()])
     description = TextAreaField("Description ", validators=[Optional()])
     details = TextAreaField("Details", validators=[Optional()])
     network_enabled = BooleanField("Network Enabled", default=True)
     environment = TextAreaField("Environment Variables (ENV)", validators=[Optional()])
-    script = TextAreaField("Script (Python)", validators=[Optional()])
+    script = TextAreaField("Script", validators=[Optional()])
+    language = SelectField(
+        "Language",
+        choices=[
+            ("python", "Python"),
+            ("bash", "Bash"),
+            ("javascript", "JavaScript"),
+            ("powershell", "Powershell")
+        ],
+        default="python",
+        validators=[DataRequired()]
+    )
     submit = SubmitField('Save Script')

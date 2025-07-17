@@ -7,37 +7,67 @@
   (
     form.name
       | wtff.string_field(placeholder="Storage Alert, etc"),
-    form.network_enabled
-      | wtff.toggle_field
-  ) | jacc(bs.col, classes="mb-1"),
-  (
-    form.details
-      | mde.md_field(),
     form.description
       | wtff.textarea_field()
-  ) | jacc(bs.col, classes="mt-2")
-) | jacc(bs.row)
+  ) | jacc(bs.col, classes="mb-1"),
 
-~ ( 
   (
-    form.script
-      | cm.python_field(theme=selected_editor_theme)
-    ~ (
-      "Defines the Python script to run in a containerized environment."
-      "You cannot use templating in the script (yet)."
-    ) | cd.note
-  ),
+    form.details
+      | mde.md_field(theme=selected_editor_theme),
+    (
+      form.environment
+        | cm.env_field(theme=selected_editor_theme)
+      ~ (
+        "Variables defined here will override "
+        "Workflow and Task environments."
+      ) | cd.note
+    )
+  ) | jacc(bs.col, classes="mt-2"),
+
   (
-    form.environment
-      | cm.env_field(theme=selected_editor_theme)
-    ~ (
-      "Variables defined here will override "
-      "Workflow and Task environments."
-    ) | cd.note
-  )
-) | jacc(bs.col)
-  | bs.row
+  form.language
+    | wtff.dropdown_field,
+  form.network_enabled
+    | wtff.toggle_field
+  ) | jacc(bs.col, classes="mt-2"),
+
+  ( 
+    (
+      form.script
+        | cm.python_field(theme=selected_editor_theme)
+      ~ (
+        "Defines the Python script to run in a containerized environment."
+        " You cannot use templating in the script (yet)."
+      ) | cd.note
+    ),
+  ) | jacc(bs.col, classes="mt-2")
+  
+) | jacc(bs.row)
 }} 
 {% endautoescape %}
 {% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const languageSelector = document.getElementById("language");
+
+  languageSelector?.addEventListener("change", (event) => {
+    const lang = event.target.value;
+    const modeMap = {
+      python: "python",
+      bash: "shell",
+      js: "javascript",
+      powershell: "powershell"
+    };
+
+    const editor = window.cm_editors?.["{{ form.script.id }}"];
+    if (editor) {
+      editor.setOption("mode", modeMap[lang] || "python");
+    }
+  });
+});
+</script>
+{% endblock %}
+
 

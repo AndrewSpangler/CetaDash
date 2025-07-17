@@ -15,12 +15,12 @@ form.hidden_tag()
 ) | bs.row("mb-0")
 
 ~ form.details 
-  | mde.md_field
+  | mde.md_field(theme=selected_editor_theme)
   | bs.col("my-0")
   | bs.row
 
 ~ form.content
-  | mde.md_field
+  | mde.md_field(theme=selected_editor_theme)
   | bs.col("my-0")
   | bs.row
 }}

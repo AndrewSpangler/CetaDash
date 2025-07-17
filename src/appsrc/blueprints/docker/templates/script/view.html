@@ -29,7 +29,7 @@
         | bs.card_header("bg-dark text-white")
       ~ (
         (script.script or "")
-          | cm.python_editor(id="script")
+          | cm.python_editor(id="script", theme=selected_editor_theme)
         ~ (
           "Script to be containerized."
         ) | div("text-secondary fst-italic px-2 mx-2 py-2 mx-2")

@@ -12,7 +12,7 @@
   ) | jacc(bs.col),
   (
     form.details
-      | mde.md_field,
+      | mde.md_field(theme=selected_editor_theme),
     form.environment
       | cm.env_field(theme=selected_editor_theme)
     ~ (

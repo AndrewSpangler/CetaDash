@@ -12,7 +12,7 @@
   ) | jacc(bs.col, classes="mb-1"),
   (
     form.details
-      | mde.md_field(),
+      | mde.md_field(theme=selected_editor_theme),
     form.description
       | wtff.textarea_field()
   ) | jacc(bs.col, classes="mt-2")

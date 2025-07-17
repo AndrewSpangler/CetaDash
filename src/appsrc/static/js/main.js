@@ -151,21 +151,27 @@ $(document).ready(function(){
 });
 
 $(document).ready(function () {
-  var link_color = getComputedColor('text-dark');
-  $('.text_mdeform').each(function () {
-      new SimpleMDE({ element: this });
-  });
+  var link_color = getComputedColor('text-light');
+  var highlight_color = getComputedColor('secondary');
+  // Inject CSS for hover/focus if needed
+  const styleTag = document.createElement("style");
+  styleTag.innerHTML = `
+    .editor-toolbar a:hover,
+    .editor-toolbar a:focus,
+    .editor-toolbar a:active {
+      background-color: ${highlight_color} !important;
+      border-radius: 0 !important;
+    }
+  `;
+  document.head.appendChild(styleTag);
 
+  $('.editor-toolbar').each(function () {
+    $(this).addClass('bg-dark text-light');
+    this.style.borderRadius = '0px';
 
-  $('form.mdeform').each(function () {
-      var form = this;
-      $(form).addClass('bg-light text-dark');
-      for (let t of $(form).find('.editor-toolbar')) {
-          t.setAttribute('style', "border-radius: 0px");             
-          let links = $(t).find("a");
-          for (let l of links) {
-              l.setAttribute('style', `color:${link_color} !important`);
-          }
-      }
+    $(this).find('a').each(function () {
+      this.style.setProperty('color', link_color, 'important');
+      this.style.setProperty('border-radius', '0', 'important');
+    });
   });
 });
