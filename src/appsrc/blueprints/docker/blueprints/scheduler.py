@@ -107,7 +107,6 @@ class WorkflowScheduler:
         """Add a cron-based scheduled job"""
         cron_kwargs = {}
         
-        # Fix: Handle empty strings and None values properly
         if trigger.day_of_week is not None and trigger.day_of_week.strip():
             cron_kwargs['day_of_week'] = trigger.day_of_week
         if trigger.hour is not None and str(trigger.hour).strip():
@@ -131,7 +130,6 @@ class WorkflowScheduler:
         """Add an interval-based scheduled job"""
         interval_kwargs = {}
         
-        # Fix: Handle None values properly
         if trigger.seconds is not None and trigger.seconds > 0:
             interval_kwargs['seconds'] = trigger.seconds
         if trigger.minutes is not None and trigger.minutes > 0:
@@ -195,7 +193,6 @@ class WorkflowScheduler:
     def load_all_triggers(self):
         """Load all enabled ScheduleTriggers from database"""
         try:
-            # FIXED: Clear existing triggers first to prevent duplicates
             self.clear_all_triggers()
             
             with self.app.app_context():

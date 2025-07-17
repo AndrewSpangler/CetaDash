@@ -115,8 +115,8 @@ class BaseEditable(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text)
-    details = db.Column(db.Text)
+    description = db.Column(db.Text, default="")
+    details = db.Column(db.Text, default="")
 
     @declared_attr
     def creator_id(cls):

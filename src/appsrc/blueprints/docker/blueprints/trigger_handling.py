@@ -88,7 +88,6 @@ def parse_jinja_variables(headers: str) -> dict:
 
 
 def get_trigger_heading_map(headers:str) -> dict:
-    print(headers)
     data = yaml.safe_load(headers)
     if not "mappings" in data:
         raise ValueError("Trigger values must contain 'mappings' section")
@@ -97,7 +96,6 @@ def get_trigger_heading_map(headers:str) -> dict:
 
 
 def translate_headers(request_headers:dict, headers_mapping:dict)->dict:
-    print(headers_mapping)
     mapping = {}
     errors = []
     for k, typ in headers_mapping.get("mappings", {}).items():
@@ -256,7 +254,7 @@ def handle_trigger(user_id, trigger, request_headers, workflow, tasks, result_qu
 
             write_queue("\n"*2)
             write_workflow_log("="*40)
-            write_workflow_log(f"🖥️✅ Handling task {task} - {session_id}")
+            write_workflow_log(f"🖥️✅ Handling task [{task.id}] {task.name} - {session_id}")
             
             success = True
             message = ""

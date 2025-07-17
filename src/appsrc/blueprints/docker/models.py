@@ -35,8 +35,8 @@ mappings:
 class WorkflowTask(BaseEditable):
     __tablename__ = "WorkflowTask"
     __bind_key__ = "cetadash_db"
-    template = db.Column(db.Text)
-    environment = db.Column(db.Text)
+    template = db.Column(db.Text, default="")
+    environment = db.Column(db.Text, default="")
     use_script = db.Column(db.Boolean, default=False)
 
     script_id = db.Column(
@@ -185,7 +185,7 @@ class WorkflowTaskScheduledRunLog(BaseActionLog):
 class Workflow(BaseEditable):
     __tablename__ = "Workflow"
     __bind_key__ = "cetadash_db"
-    environment = db.Column(db.Text)
+    environment = db.Column(db.Text, default="")
     
     @property
     def prioritized_tasks(self):
@@ -380,7 +380,7 @@ class WorkflowTrigger(BaseEditable):
     __bind_key__ = "cetadash_db"
     endpoint = db.Column(db.String(200), nullable=False)
     headers = db.Column(db.Text, default=DEFAULT_HEADER_MAPPING)
-    environment = db.Column(db.Text)
+    environment = db.Column(db.Text, default="")
     workflow_id = db.Column(
         db.Integer,
         db.ForeignKey("Workflow.id", ondelete="SET NULL"),
@@ -465,7 +465,7 @@ class ScheduleTrigger(BaseEditable):
     __tablename__ = "ScheduleTrigger"
     __bind_key__ = "cetadash_db"
     headers = db.Column(db.Text, default=DEFAULT_HEADER_MAPPING)
-    environment = db.Column(db.Text)
+    environment = db.Column(db.Text, default="")
     workflow_id = db.Column(
         db.Integer, 
         db.ForeignKey("Workflow.id", ondelete="SET NULL"), 
@@ -608,9 +608,9 @@ class ScheduleTriggerRunLog(BaseActionLog):
 class WorkflowScript(BaseEditable):
     __tablename__ = "WorkflowScript"
     __bind_key__ = "cetadash_db"
-    environment = db.Column(db.Text)
-    script = db.Column(db.Text)
-    dependencies = db.Column(db.Text)
+    environment = db.Column(db.Text, default="")
+    script = db.Column(db.Text, default="")
+    dependencies = db.Column(db.Text, default="")
     network_enabled = db.Column(db.Boolean, default=True)
     language = db.Column(db.Text, default="python")
    
@@ -745,11 +745,30 @@ class WorkflowScriptScheduledRunLog(BaseActionLog):
     )
 
 
-# Test data and init_db function remain the same...
 test_data = {
+
+    "scripts": [
+        {
+            "name" : "Hello World Script",
+            "description" : "Containerizes a \"Hello World\" Python Script",
+            "network_enabled" : False,
+            "language" : "python",
+            "script" : """# Hello World Example Docker File
+import time
+if __name__ == "__main__":
+    print("Hello World!")
+    for i in range(100):
+        print(f"Hello World - {i}")
+        time.sleep(0.01)
+""",
+        }
+    ],
+
+
+
     "tasks" : [
         {
-            "name" : "Hello World 1",
+            "name" : "Hello World 1 (Container)",
             "template" : """
 networks:
     traefik_network:
@@ -773,57 +792,17 @@ TZ=America/Los_Angeles
             "description" : "Step 1 of Example Workflow",
             "details" : """""",
         },
-        {
-            "name" : "Hello World 2",
-            "template" : """
-networks:
-    traefik_network:
-        driver: bridge
-        name: traefik_network
-        external: true
 
-services:
-    hello2-{{session_id}}:
-        container_name: hello2-{{session_id}}
-        hostname: hello2-{{session_id}}
-        image: hello-world
-        networks:
-            traefik_network: {}
-        environment:
-            - TZ=$TZ
-            """,
-            "environment" : """
-TZ=America/Los_Angeles
-            """,
+        {
+            "name" : "Hello World 2 (Script)",
             "description" : "Step 2 of Example Workflow",
             "details" : """""",
+            "script_id" : 0,
         },
-        {
-            "name" : "Hello World 3",
-            "template" : """
-networks:
-    traefik_network:
-        driver: bridge
-        name: traefik_network
-        external: true
 
-services:
-    hello3-{{session_id}}:
-        container_name: hello3-{{session_id}}
-        hostname: hello3-{{session_id}}
-        image: hello-world
-        networks:
-            traefik_network: {}
-        environment:
-            - TZ=$TZ
-            """,
-            "environment" : """
-TZ=America/Los_Angeles
-            """,
-            "description" : "Step 3 of Example Workflow",
-            "details" : """""",
-        },
     ],
+
+
     "workflows" : [
         {
             "name" : "Hello World Workflow",
@@ -831,6 +810,8 @@ TZ=America/Los_Angeles
             "details": "",
         }
     ],
+
+
     "triggers" : [
         {
             "name" : "Hello World Trigger",
@@ -847,6 +828,8 @@ mappings:
 """,
         }
     ],
+
+
     "schedule_triggers" : [
         {
             "name" : "Hello World Schedule Trigger",
@@ -863,6 +846,7 @@ mappings:
 """,
         }
     ],
+
 }
 
 def init_db(app):
@@ -898,20 +882,46 @@ def init_db(app):
 
         if WorkflowTask.query.first() is None:
             logging.info("Populating initial Docker Plugin data")
+            
+            # Create scripts
+            scripts = []
+            for script_data in test_data["scripts"]:
+                script = WorkflowScript(
+                    name=script_data["name"],
+                    description=script_data["description"],
+                    language=script_data.get("language", "python"),
+                    network_enabled=script_data.get("network_enabled", True),
+                    script=script_data["script"],
+                    creator_id=1,
+                    last_editor_id=1
+                )
+                db.session.add(script)
+                scripts.append(script)
+            db.session.commit()
+
+            # Create tasks
             tasks = []
             for task_data in test_data["tasks"]:
                 task = WorkflowTask(
                     name=task_data["name"],
-                    template=task_data["template"],
-                    environment=task_data["environment"],
+                    template=task_data.get("template"),
+                    environment=task_data.get("environment"),
                     description=task_data["description"],
-                    details=task_data["details"],
+                    details=task_data.get("details", ""),
                     creator_id=1,
                     last_editor_id=1
                 )
+
+                # Link scripts
+                script_index = task_data.get("script_id")
+                if script_index is not None and 0 <= script_index < len(scripts):
+                    task.use_script = True
+                    task.script_id = scripts[script_index].id
+
                 db.session.add(task)
                 tasks.append(task)
             db.session.commit()
+
 
             wf_data = test_data["workflows"][0]
             workflow = Workflow(
