@@ -553,10 +553,11 @@
         l.timestamp_pretty,
         app.models.docker.STATUS_ENUM._NAMES[l.status],
         l.user.name,
-        workflow_link(l.task_log.workflow_log.workflow),
         trigger_link(l.task_log.workflow_log.trigger_log.trigger),
+        workflow_link(l.task_log.workflow_log.workflow),
+        task_link(l.task_log.task),
         (
-          "Trigger: " ~ trigger_run_log_link(l.task_logworkflow_log.trigger_log) 
+          "Trigger: " ~ trigger_run_log_link(l.task_log.workflow_log.trigger_log) 
           ~ "\nWorkflow: " ~ workflow_run_log_link(l.task_log.workflow_log)
           ~ "\nTask: " ~ workflow_task_run_log_link(l.task_log)
         ) | pre
@@ -569,8 +570,8 @@
         "Timestamp",
         "Status",
         "Runner",
-        "Workflow",
         "Trigger",
+        "Workflow",
         "Task",
         "Logs",
       ) | cd.table_head

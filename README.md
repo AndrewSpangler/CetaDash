@@ -2,6 +2,8 @@
 
 **CetaDash** is an extensible Docker orchestration system focused on **multi-step workflows**, **component reusability**, and **dynamic environment layering**. Built for simplicity and flexibility, CetaDash allows you to spin up containerized services and scripts through a clean, templated workflow engine.
 
+![CetaDash Example](docs/task.png)
+
 ---
 
 ## ⚠️ Disclaimer!
